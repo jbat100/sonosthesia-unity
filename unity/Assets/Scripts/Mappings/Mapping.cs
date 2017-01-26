@@ -2,6 +2,8 @@
 using System.Collections;
 
 
+// most of this stuff should probably go in the hub
+
 [System.Serializable]
 public class ValueGenerator : System.Object {
 
