@@ -13,7 +13,12 @@ using UnityEngine.EventSystems;
 
 namespace Sonosthesia
 {
+    public class SUMessage
+    {
 
+    }
+
+    // decided to switch to websocket instead
 
     public class SUServerSingleton : Singleton<SUServerSingleton>
     {
