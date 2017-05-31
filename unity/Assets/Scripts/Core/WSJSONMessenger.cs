@@ -29,14 +29,6 @@ public class WSJSONMessenger : SocketJSONMessenger
     {
         base.Awake();
 
-        // media can be overriden with media argument
-        string urlParam = CommonUtils.GetStartupParameter("-ws");
-        if (urlParam != null)
-        {
-            Debug.LogWarning("WSJSONMessenger ws address set to " + urlParam);
-            url = urlParam;
-        }
-
         ws = new WebSocket(url);
         ws.OnOpen += OnOpen;
         ws.OnMessage += OnMessage;
@@ -141,7 +133,7 @@ public class WSJSONMessenger : SocketJSONMessenger
         }
 
 
-        EnqueueIncomingMessage(json);
+        InternalEnqueueMessage(json);
     }
 
 

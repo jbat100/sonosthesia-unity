@@ -1,23 +1,26 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 // this class is meant as an abstraction which works for any JSONObject sender/receiver
 // including websocket and socket.io
 
-public delegate void JSONMessagetHandler(object sender, JSONObject json);
+public delegate void JSONMessagetHandler(object sender, List<JSONObject> jsonObjects);
 
 public class SocketJSONMessenger : MonoBehaviour
 {
     public event JSONMessagetHandler JSONMessageEvent;
 
+    public bool push = false;
+
     private object _jsonQueueLock;
-    private Queue<JSONObject> _jsonQueue;
+    private List<JSONObject> _jsonQueue;
 
     protected virtual void Awake()
     {
         _jsonQueueLock = new object();
-        _jsonQueue = new Queue<JSONObject>();
+        _jsonQueue = new List<JSONObject>();
     }
 
     public virtual void SendMessage(JSONObject json)
@@ -25,33 +28,77 @@ public class SocketJSONMessenger : MonoBehaviour
         // subclasses should implement this
     }
 
+    public List<JSONObject> DequeueMessages()
+    {
+        if (push)
+        {
+            throw new Exception("cannot dequeue messages in push mode");
+        }
+        else
+        {
+            return InternalDequeueMessages();
+        }
+    }
+
     // this should be called on the main thread, not on some background networking thread
     protected void BroadcastIncomingMessage(JSONObject json)
     {
+        if (push)
+        {
+            InternalEnqueueMessage(json);
+        }
+        else
+        {
+            PushJSONObject(json);
+        }
+    }
+
+
+
+    protected virtual void Update()
+    {
+        if (push)
+        {
+            PushJSONObjects(InternalDequeueMessages());
+        }
+    }
+
+    protected void PushJSONObject(JSONObject json)
+    {
         if (JSONMessageEvent != null)
         {
-            JSONMessageEvent(this, json);
+            JSONMessageEvent(this, new List<JSONObject> { json });
+        }
+    }
+
+    protected void PushJSONObjects(List<JSONObject> jsons)
+    {
+        if (JSONMessageEvent != null)
+        {
+            JSONMessageEvent(this, jsons);
         }
     }
 
     // this should be called from a background (likely networking) thread, the enqueued messages
     // will be dequeued and broadcast on the main thread on the next Update call 
-    protected void EnqueueIncomingMessage(JSONObject json)
+    protected void InternalEnqueueMessage(JSONObject json)
     {
         lock (_jsonQueueLock)
         {
-            _jsonQueue.Enqueue(json);
+            _jsonQueue.Add(json);
         }
     }
 
-    protected virtual void Update()
+    protected List<JSONObject> InternalDequeueMessages()
     {
+        List<JSONObject> temp = new List<JSONObject>();
+
         lock (_jsonQueueLock)
         {
-            while (_jsonQueue.Count > 0)
-            {
-                BroadcastIncomingMessage(_jsonQueue.Dequeue());
-            }
+            temp.AddRange(_jsonQueue);
+            _jsonQueue.Clear();
         }
+
+        return temp;
     }
 }
