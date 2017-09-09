@@ -1,20 +1,20 @@
 # Sonosthesia-Unity
 
-Part of the [Sonosthesia](www.sonosthesia.com/home) project.
+Part of the [Sonosthesia](http://www.sonosthesia.com/home) project.
 
 ## Project Overview
 
 ### Core
 
-Core networking and messaging functionality is provided to expose **input** and **output**, **static** and **dynamic** channels to the [Sonosthsia-Hub](https://github.com/jbat100/sonosthesia-hub/tree/develop) (see [Sonosthesia Protocol](www.sonosthesia.com/protocols)) using game objects in the Unity editor. Eventually, the ability to create new channels dynamically at run time from user input actions (either VR or Desktop) may be added.
+Core networking and messaging functionality is provided to expose **input** and **output**, **static** and **dynamic** channels to the [Sonosthsia-Hub](https://github.com/jbat100/sonosthesia-hub/tree/develop) (see [Sonosthesia Protocol](http://www.sonosthesia.com/protocols)) using game objects in the Unity editor. Eventually, the ability to create new channels dynamically at run time from user input actions (either VR or Desktop) may be added.
 
 ### Scene Controllers and Modifiers
 
-Scene controllers and modifiers allow **input** channels (see [Sonosthesia Protocol](www.sonosthesia.com/protocols)) to be used to control and modify Unity game objects in the scene at run time. This is a work in progress and a large number of different options should be provided, with particular effort given to reusability and genericity. 
+Scene controllers and modifiers allow **input** channels (see [Sonosthesia Protocol](http://www.sonosthesia.com/protocols)) to be used to control and modify Unity game objects in the scene at run time. This is a work in progress and a large number of different options should be provided, with particular effort given to reusability and genericity. 
 
 ### Interaction Descriptors
 
-Interaction descriptors allow user input (in VR or Desktop) to be pushed to **output** channels (see [Sonosthesia Protocol](www.sonosthesia.com/protocols)). There objective is to provide intuitive, organic, effective, highly dimensional output (control) data to other components through the [Sonosthsia-Hub](https://github.com/jbat100/sonosthesia-hub/tree/develop).
+Interaction descriptors allow user input (in VR or Desktop) to be pushed to **output** channels (see [Sonosthesia Protocol](http://www.sonosthesia.com/protocols)). There objective is to provide intuitive, organic, effective, highly dimensional output (control) data to other components through the [Sonosthsia-Hub](https://github.com/jbat100/sonosthesia-hub/tree/develop).
 
 ## Why Unity
 
