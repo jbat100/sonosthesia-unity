@@ -58,7 +58,7 @@ namespace Sonosthesia
                 case MessageType.Destroy:
                 case MessageType.Control:
                 case MessageType.Event:
-                    {
+                    { 
                         ChannelMessage message = _channelMessagePool.Fetch();
                         message.ApplyJSON(json);
                         _channelMessageBuffer.EnqueueMessage(message);

@@ -1,19 +1,25 @@
 ﻿using UnityEngine;
 
-public class SingletonBehaviour<T> : MonoBehaviour where T : SingletonBehaviour<T>
+namespace Sonosthesia
 {
-    public static T instance { get; protected set; }
 
-    void Awake()
+    public class SingletonBehaviour<T> : MonoBehaviour where T : SingletonBehaviour<T>
     {
-        if (instance != null && instance != this)
+        public static T instance { get; protected set; }
+
+        void Awake()
         {
-            Destroy(this);
-            throw new System.Exception("An instance of this singleton already exists.");
-        }
-        else
-        {
-            instance = (T)this;
+            if (instance != null && instance != this)
+            {
+                Destroy(this);
+                throw new System.Exception("An instance of this singleton already exists.");
+            }
+            else
+            {
+                instance = (T)this;
+            }
         }
     }
+
 }
+

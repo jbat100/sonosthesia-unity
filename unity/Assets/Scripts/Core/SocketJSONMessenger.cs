@@ -53,8 +53,6 @@ public class SocketJSONMessenger : MonoBehaviour
         }
     }
 
-
-
     protected virtual void Update()
     {
         if (push)
