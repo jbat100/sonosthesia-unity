@@ -116,7 +116,7 @@ public class WSJSONMessenger : SocketJSONMessenger
 
     private void OnMessage(object sender, MessageEventArgs e)
     {
-        Debug.Log("WebsocketClientTest OnMessage " + e.Type);
+        //Debug.Log("WebsocketClientTest OnMessage " + e.Type);
 
         JSONObject json = null;
 
@@ -139,12 +139,12 @@ public class WSJSONMessenger : SocketJSONMessenger
 
     private void OnError(object sender, ErrorEventArgs e)
     {
-        Debug.Log("WebsocketClientTest OnError");
+        Debug.Log("WebsocketClientTest OnError " + e.Message);
     }
 
     private void OnClose(object sender, CloseEventArgs e)
     {
-        Debug.Log("WebsocketClientTest OnClose");
+        Debug.Log("WebsocketClientTest OnClose " + e.Reason);
     }
 
 }

@@ -11,8 +11,11 @@ namespace Sonosthesia
         private ObjectPool<ComponentMessage> _componentMessagePool;
 
         private ChannelMessageBuffer _channelMessageBuffer;
-
         private WSJSONMessenger _messenger;
+
+        // store currently used channel and component messages to return them to pool on LateUpdate
+        private List<ChannelMessage> _currentChannelMessages = new List<ChannelMessage>();
+        private List<ComponentMessage> _currentComponentMessages = new List<ComponentMessage>();
 
         private void Awake()
         {
@@ -26,7 +29,7 @@ namespace Sonosthesia
         }
 
         // Update is called once per frame
-        void Update()
+        private void Update()
         {
             if (_messenger.push)
             {
@@ -41,9 +44,18 @@ namespace Sonosthesia
                 
                 foreach(ChannelMessage message in _channelMessageBuffer.DequeueMessages())
                 {
-                    ApplyMessage(message);
+                    ApplyChannelMessage(message);
                 }
             }
+        }
+
+        private void LateUpdate()
+        {
+            _componentMessagePool.Store(_currentComponentMessages);
+            _currentComponentMessages.Clear();
+
+            _channelMessagePool.Store(_currentChannelMessages);
+            _currentComponentMessages.Clear();
         }
 
         protected void ProcessJSON(JSONObject json)
@@ -54,6 +66,13 @@ namespace Sonosthesia
 
             switch (messageType)
             {
+                case MessageType.Component:
+                    {
+                        ComponentMessage message = _componentMessagePool.Fetch();
+                        message.ApplyJSON(json);
+                        ApplyComponentMessage(message);
+                    }
+                    break;
                 case MessageType.Create:
                 case MessageType.Destroy:
                 case MessageType.Control:
@@ -69,9 +88,18 @@ namespace Sonosthesia
             }
         }
 
-        protected void ApplyMessage(ChannelMessage message)
+        protected void ApplyChannelMessage(ChannelMessage message)
         {
+            _currentChannelMessages.Add(message);
 
+            Debug.Log("ApplyChannelMessage " + message);
+        }
+
+        protected void ApplyComponentMessage(ComponentMessage message)
+        {
+            _currentComponentMessages.Add(message);
+
+            Debug.Log("ApplyComponentMessage " + message);
         }
     }
 
