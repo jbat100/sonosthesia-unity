@@ -24,7 +24,7 @@ namespace Sonosthesia
             _parameters.Combine(other);
         }
 
-        public IEnumerable<float> GetMultiParameter(string identifier)
+        public IEnumerable<float> GetMultiParameter(string identifier) 
         {
             return _parameters.GetValueOrDefault(identifier, null);
         }
@@ -32,6 +32,9 @@ namespace Sonosthesia
         public float GetParameter(string identifier)
         {
             IEnumerable<float> multi = GetMultiParameter(identifier);
+
+            // https://stackoverflow.com/questions/497261/how-do-i-get-the-first-element-from-an-ienumerablet-in-net
+
             return multi.FirstOrDefault();
         }
     }
@@ -93,6 +96,10 @@ namespace Sonosthesia
                 throw new Exception("mismatched message");
             }
 
+            if (message.key.instance != null)
+            {
+
+            }
 
         }
 
