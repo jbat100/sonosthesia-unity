@@ -17,6 +17,8 @@ namespace Sonosthesia
         private List<ChannelMessage> _currentChannelMessages = new List<ChannelMessage>();
         private List<ComponentMessage> _currentComponentMessages = new List<ComponentMessage>();
 
+        private Dictionary<ChannelKey, ChannelController> _channelControllers = new Dictionary<ChannelKey, ChannelController>();
+
         private void Awake()
         {
             _componentMessagePool = new ObjectPool<ComponentMessage>();
@@ -25,6 +27,11 @@ namespace Sonosthesia
             _channelMessageBuffer = new ChannelMessageBuffer(_channelMessagePool);
 
             _messenger = GetComponent<WSJSONMessenger>();
+            
+        }
+
+        private void Start()
+        {
             
         }
 
