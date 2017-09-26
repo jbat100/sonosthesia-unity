@@ -1522,11 +1522,9 @@ namespace com.spacepuppy.Utils
                 else
                 {
                     var sval = System.Convert.ToString(value);
-#if UNITY_WEBPLAYER
+
 					if (sval != null && Regex.IsMatch(sval.Trim(), RX_TIME, RegexOptions.IgnoreCase))
-#else
-                    if (sval != null && Regex.IsMatch(sval.Trim(), RX_TIME, RegexOptions.IgnoreCase | RegexOptions.Compiled))
-#endif
+
                     {
                         sval = Regex.Replace(sval.Trim(), "\\s+", " ");
                         var arr = sval.Split(' ');

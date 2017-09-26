@@ -126,10 +126,7 @@ namespace com.spacepuppy.Utils
                 return (obj as Transform).FindRoot();
             else if (obj is GameObject)
                 return (obj as GameObject).FindRoot();
-            else if (obj is SPComponent)
-            {
-                return (obj as SPComponent).entityRoot;
-            }
+
             else if (obj is Component)
                 return (obj as Component).FindRoot();
             else if (obj is IGameObjectSource)
@@ -148,14 +145,6 @@ namespace com.spacepuppy.Utils
                 return (obj as Transform).FindTrueRoot();
             else if (obj is GameObject)
                 return (obj as GameObject).FindTrueRoot();
-            else if (obj is SPComponent)
-            {
-                var r = (obj as SPComponent).entityRoot;
-                if (r.HasTag(SPConstants.TAG_ROOT))
-                    return r;
-                else
-                    return null;
-            }
             else if (obj is Component)
                 return (obj as Component).FindTrueRoot();
             else if (obj is IGameObjectSource)
