@@ -19,6 +19,21 @@ namespace Sonosthesia
 
         private Dictionary<ChannelKey, ChannelController> _channelControllers = new Dictionary<ChannelKey, ChannelController>();
 
+        public void SendChannelMessage(ChannelMessage message)
+        {
+            SendJSON(message.ToJSON());
+        }
+
+        public void SendCompnentMessage(ComponentMessage message)
+        {
+            SendJSON(message.ToJSON());
+        }
+
+        private void SendJSON(JSONObject json)
+        {
+            _messenger.SendMessage(json);
+        }
+
         private void Awake()
         {
             _componentMessagePool = new ObjectPool<ComponentMessage>();
@@ -100,6 +115,19 @@ namespace Sonosthesia
             _currentChannelMessages.Add(message);
 
             Debug.Log("ApplyChannelMessage " + message);
+
+            ChannelKey channelKey = message.ChannelKey;
+
+            ChannelController controller = null;
+
+            if (_channelControllers.TryGetValue(channelKey, out controller))
+            {
+                controller.ApplyIncomingMessage(message);
+            }
+            else
+            {
+                Debug.LogWarning("unknown channel message key : " + channelKey);
+            }
         }
 
         protected void ApplyComponentMessage(ComponentMessage message)

@@ -35,6 +35,11 @@ namespace Sonosthesia
         }
     }
 
+    public interface IChannelParameterDescriptionProvider
+    {
+        IEnumerable<ChannelParameterDescription> ParameterDescriptions { get; }
+    }
+
     public class ChannelParameterSet
     {
         private Dictionary<string, IEnumerable<float>> _parameters = new Dictionary<string, IEnumerable<float>>();
@@ -58,6 +63,37 @@ namespace Sonosthesia
             return multi.FirstOrDefault();
         }
     }
+
+    // a base class for both channel input and output objects
+    public class ChannelEndpoint : MonoBehaviour, IChannelParameterDescriptionProvider
+    {
+        public ChannelController controller;
+
+        public virtual IEnumerable<ChannelParameterDescription> ParameterDescriptions
+        {
+            get
+            {
+                return Enumerable.Empty<ChannelParameterDescription>();
+            }
+        }
+
+        protected virtual void Awake()
+        {
+            controller = controller ?? GetComponentInParent<ChannelController>();
+            
+            if (controller)
+            {
+                controller.RegisterEndpoint(this);
+            }
+            else
+            {
+                Debug.LogError("endpoint could not find controller");
+            }
+
+        }
+    }
+
+    //--------------------------------------- Channel Controller and Events ------------------------------------------
 
     public class ChannelInstance
     {
@@ -114,7 +150,9 @@ namespace Sonosthesia
         public event ChannelControllerDynamicEventHandler DestroyInstanceEvent;
 
         // store for return to instanceCache on LateUpdate
-        private List<ChannelInstance> deadInstances = new List<ChannelInstance>();
+        private List<ChannelInstance> _deadInstances = new List<ChannelInstance>();
+
+        private List<ChannelEndpoint> _endpoints = new List<ChannelEndpoint>();
 
         private void Awake()
         {
@@ -126,7 +164,7 @@ namespace Sonosthesia
 
         private void LateUpdate()
         {
-            foreach(ChannelInstance instance in deadInstances)
+            foreach(ChannelInstance instance in _deadInstances)
             {
                 instanceCache.Release(instance);
             }
@@ -134,6 +172,15 @@ namespace Sonosthesia
             instances.Clear();
         }
 
+        public void RegisterEndpoint(ChannelEndpoint endpoint)
+        {
+            if ((endpoint != null) && (!_endpoints.Contains(endpoint)))
+            {
+                _endpoints.Add(endpoint);
+            }
+        }
+        
+        // public but just for the NetworkDataManager, c# should have friend classes like c++, they can be handy...
         public void ApplyIncomingMessage(ChannelMessage message)
         {
             if (message.key.component != componentController.identifier || message.key.channel != identifier)
@@ -199,7 +246,7 @@ namespace Sonosthesia
 
         public void SendOutgoingMessage(ChannelMessage message)
         {
-
+            NetworkDataManager.instance.SendChannelMessage(message);
         }
 
         private void ExtractParameterSet(ChannelParameterSet parameterSet, ChannelMessage message)
@@ -223,7 +270,7 @@ namespace Sonosthesia
             ChannelInstance instance = null;
             if (instances.TryGetValue(identifier, out instance))
             {
-                deadInstances.Add(instance);
+                _deadInstances.Add(instance);
                 instances.Remove(identifier);
             }
             return instance;
