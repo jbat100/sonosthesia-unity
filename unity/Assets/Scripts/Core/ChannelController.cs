@@ -42,21 +42,29 @@ namespace Sonosthesia
 
     public class ChannelParameterSet
     {
-        private Dictionary<string, IEnumerable<float>> _parameters = new Dictionary<string, IEnumerable<float>>();
+        private Dictionary<string, IList<float>> _parameters = new Dictionary<string, IList<float>>();
 
-        public void Apply(Dictionary<string, IEnumerable<float>> other)
+        public void Apply(Dictionary<string, IList<float>> other)
         {
             _parameters.Combine(other);
         }
 
-        public IEnumerable<float> GetMultiParameter(string identifier) 
+        // breaks encapsultation but better performance which is pretty critical here...
+        public IDictionary<string, IList<float>> RawDict { get { return _parameters; } }
+
+        public IEnumerable<string> GetParameterIdentifiers()
+        {
+            return _parameters.Keys;
+        }
+
+        public IList<float> GetMultiParameter(string identifier) 
         {
             return _parameters.GetValueOrDefault(identifier, null);
         }
 
         public float GetParameter(string identifier)
         {
-            IEnumerable<float> multi = GetMultiParameter(identifier);
+            IList<float> multi = GetMultiParameter(identifier);
 
             // https://stackoverflow.com/questions/497261/how-do-i-get-the-first-element-from-an-ienumerablet-in-net
 
