@@ -137,20 +137,15 @@ namespace Sonosthesia
         static private IEnumerable<ChannelParameterDescription> _parameterDescriptions = new List<ChannelParameterDescription>()
         {
             new ChannelParameterDescription("color_alpha"),
-
             new ChannelParameterDescription("color_red"),
             new ChannelParameterDescription("color_green"),
             new ChannelParameterDescription("color_blue"),
-
             new ChannelParameterDescription("color_hue"),
             new ChannelParameterDescription("color_saturation"),
             new ChannelParameterDescription("color_brightness"),
-
             new ChannelParameterDescription("color_grad_1"),
             new ChannelParameterDescription("color_grad_2"),
-
             new ChannelParameterDescription("color_grad_mix", 0f, 1f, 0f, 2),
-
             new ChannelParameterDescription("color_rgba", 0f, 1f, 0f, 4),
             new ChannelParameterDescription("color_hsva", 0f, 1f, 0f, 4)
         };
