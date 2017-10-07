@@ -4,19 +4,19 @@ using UnityEngine;
 
 namespace Sonosthesia
 {
-    public interface IColorAccessor<TRepresentation> where TRepresentation : class
+    public interface IColorAccessor
     {
-        Color GetColor(TRepresentation representation);
-        void SetColor(TRepresentation representation, Color color);
+        Color GetColor(GameObject representation);
+        void SetColor(GameObject representation, Color color);
     }
 
-    abstract public class BaseColorAccessor<TRepresentation> : MonoBehaviour, IColorAccessor<TRepresentation> where TRepresentation : class
+    abstract public class BaseColorAccessor : MonoBehaviour, IColorAccessor
     {
-        abstract public Color GetColor(TRepresentation representation);
-        abstract public void SetColor(TRepresentation representation, Color color);
+        abstract public Color GetColor(GameObject representation);
+        abstract public void SetColor(GameObject representation, Color color);
     }
 
-    public class ColorAccessor : BaseColorAccessor<GameObject>
+    public class ColorAccessor : BaseColorAccessor
     {
         public int materialIndex = 0;
 

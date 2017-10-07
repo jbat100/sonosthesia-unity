@@ -8,7 +8,178 @@ using com.spacepuppy.Collections;
 
 namespace Sonosthesia
 {
-	public enum ChannelFlow
+
+
+    public class ChannelController : MonoBehaviour
+    {
+
+        private static ObjectCachePool<ChannelInstance> instanceCache = new ObjectCachePool<ChannelInstance>(1000);
+
+        public string identifier;
+
+        public ChannelFlow flow;
+
+        public ComponentController componentController;
+
+        //-----------------------------------------------------------------------------------------------
+
+        [HideInInspector]
+        public ChannelParameterSet staticParameters = new ChannelParameterSet();
+
+        [HideInInspector]
+        public Dictionary<string, ChannelInstance> instances = new Dictionary<string, ChannelInstance>();
+
+        public event ChannelControllerStaticEventHandler StaticControlEvent;
+
+        public event ChannelControllerDynamicEventHandler CreateInstanceEvent;
+        public event ChannelControllerDynamicEventHandler ControlInstanceEvent;
+        public event ChannelControllerDynamicEventHandler DestroyInstanceEvent;
+
+        // store for return to instanceCache on LateUpdate
+        private List<ChannelInstance> _deadInstances = new List<ChannelInstance>();
+
+        private List<ChannelEndpoint> _endpoints = new List<ChannelEndpoint>();
+
+        private void Awake()
+        {
+            if (!componentController)
+            {
+                componentController = GetComponentInParent<ComponentController>();
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (componentController)
+            {
+                componentController.RegisterChannelController(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (componentController)
+            {
+                componentController.UnregisterChannelController(this);
+            }
+        }
+
+        private void LateUpdate()
+        {
+            foreach (ChannelInstance instance in _deadInstances)
+            {
+                instanceCache.Release(instance);
+            }
+
+            instances.Clear();
+        }
+
+        public void RegisterEndpoint(ChannelEndpoint endpoint)
+        {
+            if ((endpoint != null) && (!_endpoints.Contains(endpoint)))
+            {
+                _endpoints.Add(endpoint);
+            }
+        }
+
+        public void PushIncomingChannelMessage(ChannelMessage message)
+        {
+            if (message.key.component != componentController.identifier || message.key.channel != identifier)
+            {
+                throw new Exception("mismatched message");
+            }
+
+            if (message.key.instance != null)
+            {
+                switch (message.type)
+                {
+                    case MessageType.Control:
+                        {
+                            ChannelInstance instance = EnsureChannelInstance(message.key.instance);
+                            ExtractParameterSet(instance.parameters, message);
+                            if (ControlInstanceEvent != null)
+                            {
+                                ControlInstanceEvent(this, new ChannelControllerDynamicEventArgs(instance));
+                            }
+                        }
+                        break;
+                    case MessageType.Create:
+                        {
+                            ChannelInstance instance = EnsureChannelInstance(message.key.instance);
+                            ExtractParameterSet(instance.parameters, message);
+                            if (CreateInstanceEvent != null)
+                            {
+                                CreateInstanceEvent(this, new ChannelControllerDynamicEventArgs(instance));
+                            }
+                        }
+                        break;
+                    case MessageType.Destroy:
+                        {
+                            ChannelInstance instance = CleanChannelInstance(message.key.instance);
+                            ExtractParameterSet(instance.parameters, message);
+                            if (DestroyInstanceEvent != null)
+                            {
+                                DestroyInstanceEvent(this, new ChannelControllerDynamicEventArgs(instance));
+                            }
+                        }
+                        break;
+                    default:
+                        Debug.LogWarning("unepexted message type: " + message.type);
+                        break;
+                }
+            }
+            else
+            {
+                switch (message.type)
+                {
+                    case MessageType.Control:
+                        {
+                            ExtractParameterSet(staticParameters, message);
+                            if (StaticControlEvent != null)
+                            {
+                                StaticControlEvent(this, new ChannelControllerStaticEventArgs(staticParameters));
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+        public void SendOutgoingChannelMessage(ChannelMessage message)
+        {
+            componentController.SendOutgoingChannelMessage(message);
+        }
+
+        private void ExtractParameterSet(ChannelParameterSet parameterSet, ChannelMessage message)
+        {
+            parameterSet.Apply(message.parameters);
+        }
+
+        private ChannelInstance EnsureChannelInstance(string identifier)
+        {
+            ChannelInstance instance = null;
+            if (!instances.TryGetValue(identifier, out instance))
+            {
+                instance = instanceCache.GetInstance();
+                instances[identifier] = instance;
+            }
+            return instance;
+        }
+
+        private ChannelInstance CleanChannelInstance(string identifier)
+        {
+            ChannelInstance instance = null;
+            if (instances.TryGetValue(identifier, out instance))
+            {
+                _deadInstances.Add(instance);
+                instances.Remove(identifier);
+            }
+            return instance;
+        }
+    }
+
+
+    public enum ChannelFlow
 	{
 		UNDEFINED,
 		INCOMING,
@@ -132,158 +303,7 @@ namespace Sonosthesia
     }
 
     public delegate void ChannelControllerDynamicEventHandler(object sender, ChannelControllerDynamicEventArgs e);
-
-    public class ChannelController : MonoBehaviour {
-
-        private static ObjectCachePool<ChannelInstance> instanceCache = new ObjectCachePool<ChannelInstance>(1000); 
-
-        public string identifier;
-
-        public ChannelFlow flow;
-
-        public ComponentController componentController;
-
-        //-----------------------------------------------------------------------------------------------
-
-        [HideInInspector]
-        public ChannelParameterSet staticParameters = new ChannelParameterSet();
-
-        [HideInInspector]
-        public Dictionary<string, ChannelInstance> instances = new Dictionary<string, ChannelInstance>();
-
-        public event ChannelControllerStaticEventHandler StaticControlEvent;
-
-        public event ChannelControllerDynamicEventHandler CreateInstanceEvent;
-        public event ChannelControllerDynamicEventHandler ControlInstanceEvent;
-        public event ChannelControllerDynamicEventHandler DestroyInstanceEvent;
-
-        // store for return to instanceCache on LateUpdate
-        private List<ChannelInstance> _deadInstances = new List<ChannelInstance>();
-
-        private List<ChannelEndpoint> _endpoints = new List<ChannelEndpoint>();
-
-        private void Awake()
-        {
-            if (!componentController)
-            {
-                componentController = GetComponentInParent<ComponentController>();
-            }
-        }
-
-        private void LateUpdate()
-        {
-            foreach(ChannelInstance instance in _deadInstances)
-            {
-                instanceCache.Release(instance);
-            }
-
-            instances.Clear();
-        }
-
-        public void RegisterEndpoint(ChannelEndpoint endpoint)
-        {
-            if ((endpoint != null) && (!_endpoints.Contains(endpoint)))
-            {
-                _endpoints.Add(endpoint);
-            }
-        }
-        
-        // public but just for the NetworkDataManager, c# should have friend classes like c++, they can be handy...
-        public void ApplyIncomingMessage(ChannelMessage message)
-        {
-            if (message.key.component != componentController.identifier || message.key.channel != identifier)
-            {
-                throw new Exception("mismatched message");
-            }
-
-            if (message.key.instance != null)
-            {
-                switch (message.type)
-                {
-                    case MessageType.Control:
-                        {
-                            ChannelInstance instance = EnsureChannelInstance(message.key.instance);
-                            ExtractParameterSet(instance.parameters, message);
-                            if (ControlInstanceEvent != null)
-                            {
-                                ControlInstanceEvent(this, new ChannelControllerDynamicEventArgs(instance));
-                            }
-                        }
-                        break;
-                    case MessageType.Create:
-                        {
-                            ChannelInstance instance = EnsureChannelInstance(message.key.instance);
-                            ExtractParameterSet(instance.parameters, message);
-                            if (CreateInstanceEvent != null)
-                            {
-                                CreateInstanceEvent(this, new ChannelControllerDynamicEventArgs(instance));
-                            }
-                        }
-                        break;
-                    case MessageType.Destroy:
-                        {
-                            ChannelInstance instance = CleanChannelInstance(message.key.instance);
-                            ExtractParameterSet(instance.parameters, message);
-                            if (DestroyInstanceEvent != null)
-                            {
-                                DestroyInstanceEvent(this, new ChannelControllerDynamicEventArgs(instance));
-                            }
-                        }
-                        break;
-                    default:
-                        Debug.LogWarning("unepexted message type: " + message.type);
-                        break;
-                }
-            }
-            else
-            {
-                switch (message.type)
-                {
-                    case MessageType.Control:
-                        {
-                            ExtractParameterSet(staticParameters, message);
-                            if (StaticControlEvent != null)
-                            {
-                                StaticControlEvent(this, new ChannelControllerStaticEventArgs(staticParameters));
-                            }
-                        }
-                        break;
-                }
-            }
-        }
-
-        public void SendOutgoingMessage(ChannelMessage message)
-        {
-            NetworkDataManager.instance.SendChannelMessage(message);
-        }
-
-        private void ExtractParameterSet(ChannelParameterSet parameterSet, ChannelMessage message)
-        {
-            parameterSet.Apply(message.parameters);
-        }
-
-        private ChannelInstance EnsureChannelInstance(string identifier)
-        {
-            ChannelInstance instance = null;
-            if (!instances.TryGetValue(identifier, out instance))
-            {
-                instance = instanceCache.GetInstance();
-                instances[identifier] = instance;
-            }
-            return instance;
-        }
-
-        private ChannelInstance CleanChannelInstance(string identifier)
-        {
-            ChannelInstance instance = null;
-            if (instances.TryGetValue(identifier, out instance))
-            {
-                _deadInstances.Add(instance);
-                instances.Remove(identifier);
-            }
-            return instance;
-        }
-    }
+    
     
 }
 

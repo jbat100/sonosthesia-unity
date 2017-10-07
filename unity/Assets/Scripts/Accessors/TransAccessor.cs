@@ -6,19 +6,19 @@ using com.spacepuppy.Geom;
 
 namespace Sonosthesia
 {
-    public interface ITransAccessor<TRepresentation> where TRepresentation : class
+    public interface ITransAccessor
     {
-        Trans GetTrans(TRepresentation representation);
-        void SetTrans(TRepresentation representation, Trans trans);
+        Trans GetTrans(GameObject representation);
+        void SetTrans(GameObject representation, Trans trans);
     }
 
-    abstract public class BaseTransAccessor<TRepresentation> : MonoBehaviour, ITransAccessor<TRepresentation> where TRepresentation : class
+    abstract public class BaseTransAccessor : MonoBehaviour, ITransAccessor
     {
-        abstract public Trans GetTrans(TRepresentation representation);
-        abstract public void SetTrans(TRepresentation representation, Trans trans);
+        abstract public Trans GetTrans(GameObject representation);
+        abstract public void SetTrans(GameObject representation, Trans trans);
     }
 
-    public class TransAccessor : BaseTransAccessor<GameObject>
+    public class TransAccessor : BaseTransAccessor
     {
         public bool local = true;
 
