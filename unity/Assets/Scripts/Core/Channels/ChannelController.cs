@@ -10,7 +10,7 @@ namespace Sonosthesia
 {
 
 
-    public class ChannelController : MonoBehaviour
+    public class ChannelController : MonoBehaviour, IChannelParameterDescriptionProvider
     {
 
         private static ObjectCachePool<ChannelInstance> instanceCache = new ObjectCachePool<ChannelInstance>(1000);
@@ -34,6 +34,17 @@ namespace Sonosthesia
         public event ChannelControllerDynamicEventHandler CreateInstanceEvent;
         public event ChannelControllerDynamicEventHandler ControlInstanceEvent;
         public event ChannelControllerDynamicEventHandler DestroyInstanceEvent;
+
+        public IEnumerable<ChannelParameterDescription> ParameterDescriptions
+        {
+            get
+            {
+                // combine the parameter descriptions of all the endpoints
+                // https://stackoverflow.com/questions/27056967/concatenate-multiple-ienumerablet
+
+                return _endpoints.Select(endpoint => endpoint.ParameterDescriptions).SelectMany(description => description);
+            }
+        }
 
         // store for return to instanceCache on LateUpdate
         private List<ChannelInstance> _deadInstances = new List<ChannelInstance>();

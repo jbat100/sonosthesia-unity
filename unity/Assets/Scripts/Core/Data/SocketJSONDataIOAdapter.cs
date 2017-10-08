@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,9 +7,15 @@ namespace Sonosthesia
 {
     public class SocketJSONDataIOAdapter : DataIOAdapter
     {
+        [SerializeField]
+        private SocketJSONMessenger _messenger;
 
-        public SocketJSONMessenger messenger;
+        public override void DeclareComponents(IEnumerable<ComponentController> controllers)
+        {
+            ComponentMessage message = new ComponentMessage(controllers.Select(controller => MakeComponentInfo(controller)));
 
+            SendOutgoingComponentMessage(message);
+        }
 
         public override void SendOutgoingChannelMessage(ChannelMessage message)
         {
@@ -21,9 +27,24 @@ namespace Sonosthesia
             SendJSON(message.ToJSON());
         }
 
+        private ComponentInfo MakeComponentInfo(ComponentController controller)
+        {
+            return new ComponentInfo(controller.identifier, controller.ChannelControllers.Select(c => MakeChannelInfo(c)));
+        }
+
+        private ChannelInfo MakeChannelInfo(ChannelController controller)
+        {
+            return new ChannelInfo(controller.identifier, controller.ParameterDescriptions.Select(desc => MakeParameterInfo(desc)));
+        }
+
+        private ParameterInfo MakeParameterInfo(ChannelParameterDescription desc)
+        {
+            return new ParameterInfo(desc.key, desc.defaultValue, desc.minValue, desc.maxValue, desc.dimensions);
+        }
+
         protected override void ProcessData()
         {
-            foreach (JSONObject json in messenger.DequeueMessages())
+            foreach (JSONObject json in _messenger.DequeueMessages())
             {
                 ProcessJSON(json);
             }
@@ -31,7 +52,7 @@ namespace Sonosthesia
 
         private void SendJSON(JSONObject json)
         {
-            messenger.SendMessage(json);
+            _messenger.SendMessage(json);
         }
 
         private void ProcessJSON(JSONObject json)

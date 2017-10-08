@@ -26,8 +26,12 @@ namespace Sonosthesia
 
     public class RangeInfo : JSONDecodable, JSONEncodable
     {
-        public float min;
-        public float max;
+        public readonly static RangeInfo defaultRange = new RangeInfo();
+
+        public float min = 0f;
+        public float max = 1f;
+
+        public RangeInfo() { }
 
         public RangeInfo(float _min, float _max)
         {
@@ -59,6 +63,13 @@ namespace Sonosthesia
     {
         public string identifier;
 
+        public BaseInfo() { }
+
+        public BaseInfo(string _identifier)
+        {
+            identifier = _identifier;
+        }
+
         public virtual JSONObject ToJSON()
         {
             JSONObject json = new JSONObject();
@@ -75,8 +86,18 @@ namespace Sonosthesia
 
     public class ParameterInfo : BaseInfo
     {
-        public RangeInfo range = new RangeInfo(0f, 1f);
+        public RangeInfo range = RangeInfo.defaultRange;
         public float defaultValue = 0f;
+        public int dimensions = 1;
+
+        public ParameterInfo() { }
+
+        public ParameterInfo(string _identifier, float _defaultValue, float _minValue, float _maxValue, int _dimensions = 1) : base(_identifier)
+        {
+            defaultValue = _defaultValue;
+            dimensions = _dimensions;
+            range = new RangeInfo(_minValue, _maxValue);
+        }
 
         public override JSONObject ToJSON()
         {
@@ -98,6 +119,13 @@ namespace Sonosthesia
     {
         public List<ParameterInfo> parameters = new List<ParameterInfo>();
 
+        public ChannelInfo() { }
+
+        public ChannelInfo(string _identifier, IEnumerable<ParameterInfo> _parameters) : base(_identifier)
+        {
+            parameters.AddRange(_parameters);
+        }
+
         public override JSONObject ToJSON()
         {
             JSONObject json = base.ToJSON();
@@ -115,6 +143,13 @@ namespace Sonosthesia
     public class ComponentInfo : BaseInfo
     {
         public List<ChannelInfo> channels = new List<ChannelInfo>();
+
+        public ComponentInfo() { }
+
+        public ComponentInfo(string _identifier, IEnumerable<ChannelInfo> _channels) : base(_identifier)
+        {
+            channels.AddRange(_channels);
+        }
 
         public override JSONObject ToJSON()
         {
@@ -438,7 +473,14 @@ namespace Sonosthesia
 
     public class ComponentMessage : Message
     {
-        public List<ComponentInfo> components;
+        public List<ComponentInfo> components = new List<ComponentInfo>();
+
+        public ComponentMessage() { }
+
+        public ComponentMessage(IEnumerable<ComponentInfo> _components)
+        {
+            components.AddRange(_components);
+        }
 
         //------------------ JSON encode/decode ---------------------
 

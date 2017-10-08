@@ -7,18 +7,65 @@ using UnityEngine;
 namespace Sonosthesia
 {
 
+    public enum SocketStatus
+    {
+        UNDEFINED,
+        DISCONECTED,
+        CONNECTING,
+        CONNECTED,
+        ERROR
+    }
+
+    public struct SocketStatusEventArgs
+    {
+        SocketStatus status;
+        SocketStatus previous;
+
+        public SocketStatusEventArgs(SocketStatus _status, SocketStatus _previous = SocketStatus.UNDEFINED)
+        {
+            status = _status;
+            previous = _previous;
+        }
+    }
+
+    public delegate void SocketStatusEventHandler(object sender, SocketStatusEventArgs args);
 
     // this class is meant as an abstraction which works for any JSONObject sender/receiver
     // including websocket and socket.io
 
-    public delegate void JSONMessagetHandler(object sender, List<JSONObject> jsonObjects);
+    public delegate void JSONMessageEventHandler(object sender, List<JSONObject> jsonObjects);
 
     abstract public class SocketJSONMessenger : MonoBehaviour
     {
-        public event JSONMessagetHandler JSONMessageEvent;
+        
         public bool push = false;
         public bool autoConnect = true;
 
+        public event JSONMessageEventHandler JSONMessageEvent;
+
+        public event SocketStatusEventHandler SocketStatusEvent;
+
+        public SocketStatus Status
+        {
+            get
+            {
+                return _status;
+            }
+            set
+            {
+                if (_status != value)
+                {
+                    SocketStatus previous = _status;
+                    _status = value;
+                    if (SocketStatusEvent != null)
+                    {
+                        SocketStatusEvent(this, new SocketStatusEventArgs(_status, previous));
+                    }
+                }
+            }
+        }
+
+        private SocketStatus _status = SocketStatus.UNDEFINED;
         private object _jsonQueueLock;
         private List<JSONObject> _jsonQueue;
 

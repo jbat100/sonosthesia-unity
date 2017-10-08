@@ -9,8 +9,34 @@ namespace Sonosthesia
 
     public delegate void DataIOComponentMessageEventHandler(object sender, ComponentMessage componentMessage);
 
+
+    public enum DataIOStatus
+    {
+        UNDEFINED,
+        DISCONNECTED,
+        CONNECTED,
+        ERROR
+    }
+
+    public struct DataIOStatueEnventArgs
+    {
+        public DataIOStatus status;
+        public DataIOStatus previous;
+
+        public DataIOStatueEnventArgs(DataIOStatus _status, DataIOStatus _previous = DataIOStatus.UNDEFINED)
+        {
+            status = _status;
+            previous = _previous;
+        }
+    }
+
+
+    public delegate void DataIOStatusEnventHandler(object sender, DataIOStatueEnventArgs args);
+
     public interface IDataInput
     {
+        event DataIOStatusEnventHandler StatusEvent;
+
         event DataIOChannelMessageEventHandler IncomingChannelMessageEvent;
 
         event DataIOComponentMessageEventHandler IncomingComponentMessageEvent;
@@ -23,23 +49,81 @@ namespace Sonosthesia
         void SendOutgoingComponentMessage(ComponentMessage message);
     }
 
-    abstract public class DataIOAdapter : MonoBehaviour, IDataInput, IDataOutput
+    abstract public class DataIOBase : MonoBehaviour, IDataInput, IDataOutput
     {
+        public event DataIOStatusEnventHandler StatusEvent;
+
         public event DataIOChannelMessageEventHandler IncomingChannelMessageEvent;
 
         public event DataIOComponentMessageEventHandler IncomingComponentMessageEvent;
+
+        abstract public void SendOutgoingChannelMessage(ChannelMessage message);
+
+        abstract public void SendOutgoingComponentMessage(ComponentMessage message);
+
+        public DataIOStatus Status
+        {
+            get
+            {
+                return _status;
+            }
+            protected set
+            {
+                _status = value;
+                EmitStatus(value);
+            }
+        }
+
+        private DataIOStatus _status = DataIOStatus.UNDEFINED;
+
+        protected virtual void EmitIncomingComponentMessage(ComponentMessage message)
+        {
+            if (IncomingComponentMessageEvent != null)
+            {
+                IncomingComponentMessageEvent(this, message);
+            }
+        }
+
+        protected virtual void EmitStatus(DataIOStatus status)
+        {
+            if (StatusEvent != null)
+            {
+                StatusEvent(this, new DataIOStatueEnventArgs(status));
+            }
+        }
+
+        protected virtual void EmitIncomingChannelMessage(ChannelMessage message)
+        {
+            if (IncomingChannelMessageEvent != null)
+            {
+                IncomingChannelMessageEvent(this, message);
+            }
+        }
+
+        protected virtual void EmitIncomingChannelMessages(IEnumerable<ChannelMessage> messages)
+        {
+            if (IncomingChannelMessageEvent != null)
+            {
+                foreach (ChannelMessage message in messages)
+                {
+                    IncomingChannelMessageEvent(this, message);
+                }
+            }
+        }
+    }
+
+    abstract public class DataIOAdapter : DataIOBase
+    {
 
         private ObjectPool<ChannelMessage> _channelMessagePool;
         private ChannelMessageBuffer _channelMessageBuffer;
 
         // store currently used channel and component messages to return them to pool on LateUpdate
         private List<ChannelMessage> _currentChannelMessages = new List<ChannelMessage>();
-
-        abstract public void SendOutgoingChannelMessage(ChannelMessage message);
-
-        abstract public void SendOutgoingComponentMessage(ComponentMessage message);
-
+        
         abstract protected void ProcessData();
+
+        abstract public void DeclareComponents(IEnumerable<ComponentController> controllers);
 
         protected virtual void Awake()
         {
@@ -63,34 +147,18 @@ namespace Sonosthesia
             _channelMessageBuffer.EnqueueMessage(message);
         }
 
-        protected void EmitIncomingComponentMessage(ComponentMessage message)
+        protected override void EmitIncomingChannelMessage(ChannelMessage message)
         {
-            if (IncomingComponentMessageEvent != null)
-            {
-                IncomingComponentMessageEvent(this, message);
-            }
+            base.EmitIncomingChannelMessage(message);
+            _currentChannelMessages.Add(message);
         }
 
-        protected void EmitIncomingChannelMessage(ChannelMessage message)
+        protected override void EmitIncomingChannelMessages(IEnumerable<ChannelMessage> messages)
         {
-            if (IncomingChannelMessageEvent != null)
-            {
-                _currentChannelMessages.Add(message);
-                IncomingChannelMessageEvent(this, message);
-            }
+            base.EmitIncomingChannelMessages(messages);
+            _currentChannelMessages.AddRange(messages);
         }
 
-        protected void EmitIncomingChannelMessages(IEnumerable<ChannelMessage> messages)
-        {
-            if (IncomingChannelMessageEvent != null)
-            {
-                _currentChannelMessages.AddRange(messages);
-                foreach (ChannelMessage message in messages)
-                {
-                    IncomingChannelMessageEvent(this, message);
-                }
-            }
-        }
 
         protected virtual void LateUpdate()
         {
@@ -100,13 +168,9 @@ namespace Sonosthesia
 
     }
 
-    public class DataIO : MonoBehaviour, IDataInput, IDataOutput
+    public class DataIO : DataIOBase
     {
         public List<DataIOAdapter> adapters;
-
-        public event DataIOChannelMessageEventHandler IncomingChannelMessageEvent;
-
-        public event DataIOComponentMessageEventHandler IncomingComponentMessageEvent;
 
         private Dictionary<string, ComponentController> _componentControllers = new Dictionary<string, ComponentController>();
 
@@ -116,6 +180,19 @@ namespace Sonosthesia
             {
                 adapter.IncomingChannelMessageEvent += OnIncomingChannelMessageEvent;
                 adapter.IncomingComponentMessageEvent += OnIncomingComponentMessageEvent;
+                adapter.StatusEvent += OnStatusEvent;
+            }
+        }
+
+        private void OnStatusEvent(object sender, DataIOStatueEnventArgs args)
+        {
+            if (args.status == DataIOStatus.CONNECTED)
+            {
+                DataIOAdapter adapter = sender as DataIOAdapter;
+                if (adapter)
+                {
+                    adapter.DeclareComponents(_componentControllers.Values);
+                } 
             }
         }
 
@@ -128,7 +205,7 @@ namespace Sonosthesia
             }
         }
 
-        public void SendOutgoingChannelMessage(ChannelMessage message)
+        public override void SendOutgoingChannelMessage(ChannelMessage message)
         {
             foreach(DataIOAdapter adapter in adapters)
             {
@@ -136,7 +213,7 @@ namespace Sonosthesia
             }
         }
 
-        public void SendOutgoingComponentMessage(ComponentMessage message)
+        public override void SendOutgoingComponentMessage(ComponentMessage message)
         {
             foreach (DataIOAdapter adapter in adapters)
             {
@@ -162,10 +239,7 @@ namespace Sonosthesia
 
         private void OnIncomingChannelMessageEvent(object sender, ChannelMessage channelMessage)
         {
-            if (IncomingChannelMessageEvent != null)
-            {
-                IncomingChannelMessageEvent(this, channelMessage);
-            }
+            EmitIncomingChannelMessage(channelMessage);
 
             ComponentController controller = null;
             if (_componentControllers.TryGetValue(channelMessage.key.component, out controller))
@@ -176,10 +250,7 @@ namespace Sonosthesia
 
         private void OnIncomingComponentMessageEvent(object sender, ComponentMessage componentMessage)
         {
-            if (IncomingComponentMessageEvent != null)
-            {
-                IncomingComponentMessageEvent(this, componentMessage);
-            }
+            EmitIncomingComponentMessage(componentMessage);
         }
     }
 

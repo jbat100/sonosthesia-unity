@@ -67,11 +67,11 @@ namespace Sonosthesia
                 wsConnected = ws.IsConnected;
                 if (wsConnected)
                 {
-                    Debug.Log("WebsocketClientTest Connect");
+                    Debug.Log(GetType().Name + " Connect");
                 }
                 else
                 {
-                    Debug.Log("WebsocketClientTest Disconnect");
+                    Debug.Log(GetType().Name + " Disconnect");
                 }
             }
 
