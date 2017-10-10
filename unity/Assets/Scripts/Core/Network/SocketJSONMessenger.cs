@@ -10,7 +10,7 @@ namespace Sonosthesia
     public enum SocketStatus
     {
         UNDEFINED,
-        DISCONECTED,
+        DISCONNECTED,
         CONNECTING,
         CONNECTED,
         ERROR
@@ -18,8 +18,8 @@ namespace Sonosthesia
 
     public struct SocketStatusEventArgs
     {
-        SocketStatus status;
-        SocketStatus previous;
+        public SocketStatus status;
+        public SocketStatus previous;
 
         public SocketStatusEventArgs(SocketStatus _status, SocketStatus _previous = SocketStatus.UNDEFINED)
         {
@@ -43,7 +43,7 @@ namespace Sonosthesia
 
         public event JSONMessageEventHandler JSONMessageEvent;
 
-        public event SocketStatusEventHandler SocketStatusEvent;
+        public event SocketStatusEventHandler StatusEvent;
 
         public SocketStatus Status
         {
@@ -57,9 +57,9 @@ namespace Sonosthesia
                 {
                     SocketStatus previous = _status;
                     _status = value;
-                    if (SocketStatusEvent != null)
+                    if (StatusEvent != null)
                     {
-                        SocketStatusEvent(this, new SocketStatusEventArgs(_status, previous));
+                        StatusEvent(this, new SocketStatusEventArgs(_status, previous));
                     }
                 }
             }

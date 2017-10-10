@@ -23,6 +23,7 @@ namespace Sonosthesia
 
         private volatile bool connected;
         private volatile bool wsConnected;
+        private volatile string errorMessage;
 
         private Thread socketThread;
         private WebSocket ws;
@@ -48,6 +49,7 @@ namespace Sonosthesia
 
         public override void Connect()
         {
+            Status = SocketStatus.CONNECTING;
             connected = true;
             socketThread = new Thread(RunSocketThread);
             socketThread.Start(ws);
@@ -58,6 +60,7 @@ namespace Sonosthesia
             Debug.Log("Closing socket");
             socket.Close();
             connected = false;
+            Status = SocketStatus.DISCONNECTED;
         }
 
         protected override void Update()
@@ -109,6 +112,7 @@ namespace Sonosthesia
         private void OnOpen(object sender, EventArgs e)
         {
             Debug.Log("WebsocketClientTest OnOpen");
+            Status = SocketStatus.CONNECTED;
         }
 
         private void OnMessage(object sender, MessageEventArgs e)
@@ -137,11 +141,14 @@ namespace Sonosthesia
         private void OnError(object sender, ErrorEventArgs e)
         {
             Debug.Log("WebsocketClientTest OnError " + e.Message);
+            errorMessage = e.Message;
+            Status = SocketStatus.ERROR;
         }
 
         private void OnClose(object sender, CloseEventArgs e)
         {
             Debug.Log("WebsocketClientTest OnClose " + e.Reason);
+            Status = SocketStatus.DISCONNECTED;
         }
 
     }

@@ -10,11 +10,63 @@ namespace Sonosthesia
         [SerializeField]
         private SocketJSONMessenger _messenger;
 
+        private static Dictionary<SocketStatus, DataIOStatus> _statusMap = new Dictionary<SocketStatus, DataIOStatus>()
+        {
+            { SocketStatus.UNDEFINED, DataIOStatus.UNDEFINED },
+            { SocketStatus.DISCONNECTED, DataIOStatus.DISCONNECTED },
+            { SocketStatus.CONNECTING, DataIOStatus.CONNECTING },
+            { SocketStatus.CONNECTED, DataIOStatus.CONNECTED },
+            { SocketStatus.ERROR, DataIOStatus.ERROR }
+        };
+
         public override void DeclareComponents(IEnumerable<ComponentController> controllers)
         {
             ComponentMessage message = new ComponentMessage(controllers.Select(controller => MakeComponentInfo(controller)));
 
             SendOutgoingComponentMessage(message);
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            if (!_messenger)
+            {
+                _messenger = GetComponentInChildren<SocketJSONMessenger>();
+            }
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            ApplySocketStatus(_messenger.Status);
+
+            _messenger.StatusEvent += OnSocketStatusEvent;
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            _messenger.StatusEvent -= OnSocketStatusEvent;
+        }
+
+        private void ApplySocketStatus(SocketStatus socketStatus)
+        {
+            if (_statusMap.ContainsKey(socketStatus))
+            {
+                Status = _statusMap[socketStatus];
+            }
+            else
+            {
+                Status = DataIOStatus.UNDEFINED;
+            }
+        }
+
+        private void OnSocketStatusEvent(object sender, SocketStatusEventArgs args)
+        {
+            ApplySocketStatus(args.status);
         }
 
         public override void SendOutgoingChannelMessage(ChannelMessage message)
@@ -52,7 +104,14 @@ namespace Sonosthesia
 
         private void SendJSON(JSONObject json)
         {
-            _messenger.SendMessage(json);
+            if (_messenger.Status == SocketStatus.CONNECTED)
+            {
+                _messenger.SendMessage(json);
+            }
+            else
+            {
+                Debug.LogWarning("Cannot send message, socket is not connected");
+            }
         }
 
         private void ProcessJSON(JSONObject json)

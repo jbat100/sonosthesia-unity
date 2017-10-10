@@ -14,6 +14,7 @@ namespace Sonosthesia
     {
         UNDEFINED,
         DISCONNECTED,
+        CONNECTING,
         CONNECTED,
         ERROR
     }
@@ -76,6 +77,21 @@ namespace Sonosthesia
 
         private DataIOStatus _status = DataIOStatus.UNDEFINED;
 
+        protected virtual void OnEnable()
+        {
+            StatusEvent += OnStatusEvent;
+        }
+
+        protected virtual void OnDisable()
+        {
+            StatusEvent -= OnStatusEvent;
+        }
+
+        protected virtual void OnStatusEvent(object sender, DataIOStatueEnventArgs args)
+        {
+            // override this to take action on status change
+        }
+
         protected virtual void EmitIncomingComponentMessage(ComponentMessage message)
         {
             if (IncomingComponentMessageEvent != null)
@@ -136,7 +152,9 @@ namespace Sonosthesia
             ProcessData();
             EmitIncomingChannelMessages(_channelMessageBuffer.DequeueMessages());
         }
+
         
+
         protected ChannelMessage FetchPooledChannelMessage()
         {
             return _channelMessagePool.Fetch();
@@ -174,17 +192,32 @@ namespace Sonosthesia
 
         private Dictionary<string, ComponentController> _componentControllers = new Dictionary<string, ComponentController>();
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
+            base.OnEnable();
+
             foreach(DataIOAdapter adapter in adapters)
             {
                 adapter.IncomingChannelMessageEvent += OnIncomingChannelMessageEvent;
                 adapter.IncomingComponentMessageEvent += OnIncomingComponentMessageEvent;
-                adapter.StatusEvent += OnStatusEvent;
+                adapter.StatusEvent += OnAdapterStatusEvent;
             }
         }
 
-        private void OnStatusEvent(object sender, DataIOStatueEnventArgs args)
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            foreach (DataIOAdapter adapter in adapters)
+            {
+                adapter.IncomingChannelMessageEvent -= OnIncomingChannelMessageEvent;
+                adapter.IncomingComponentMessageEvent -= OnIncomingComponentMessageEvent;
+                adapter.StatusEvent -= OnAdapterStatusEvent;
+            }
+        }
+
+        private void OnAdapterStatusEvent(object sender, DataIOStatueEnventArgs args)
         {
             if (args.status == DataIOStatus.CONNECTED)
             {
@@ -196,14 +229,6 @@ namespace Sonosthesia
             }
         }
 
-        private void OnDisable()
-        {
-            foreach (DataIOAdapter adapter in adapters)
-            {
-                adapter.IncomingChannelMessageEvent -= OnIncomingChannelMessageEvent;
-                adapter.IncomingComponentMessageEvent -= OnIncomingComponentMessageEvent;
-            }
-        }
 
         public override void SendOutgoingChannelMessage(ChannelMessage message)
         {
