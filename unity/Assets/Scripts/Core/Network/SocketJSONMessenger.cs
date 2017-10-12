@@ -22,14 +22,12 @@ namespace Sonosthesia
         {
 
             JSONObject json = null;
-
-            //if (e.IsText)
+            
             if (e.Type == Opcode.Text)
             {
                 //Debug.Log("JSONSocketUtils text ");
                 json = new JSONObject(e.Data);
             }
-            //else if (e.IsBinary)
             else if (e.Type == Opcode.Binary)
             {
                 string text = BinaryToString(e.RawData);

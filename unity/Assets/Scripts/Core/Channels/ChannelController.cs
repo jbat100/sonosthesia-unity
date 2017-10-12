@@ -23,6 +23,15 @@ namespace Sonosthesia
 
         //-----------------------------------------------------------------------------------------------
 
+        public ChannelKey ChannelKey
+        {
+            get
+            {
+                if (componentController) return ChannelKey.Create(componentController.identifier, identifier);
+                else return ChannelKey.Create(null, identifier);
+            }
+        } 
+
         [HideInInspector]
         public ChannelParameterSet staticParameters = new ChannelParameterSet();
 
