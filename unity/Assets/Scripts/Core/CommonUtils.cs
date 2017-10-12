@@ -34,4 +34,18 @@ namespace Sonosthesia
             }
         }
     }
+
+    public static class MathUils
+    {
+        public static float Average(params float[] values)
+        {
+            float sum = 0;
+            for (int i = 0; i < values.Length; i++)
+            {
+                sum += values[i];
+            }
+            return sum / values.Length;
+        }
+    }
+
 }

@@ -131,9 +131,17 @@ namespace Sonosthesia
         GameObject GetInstanceRepresentation(ChannelInstance instance);
     }
 
-    public class BaseChannelFactory : MonoBehaviour, IChannelFactory
+    public class BaseChannelFactory : MonoBehaviour, IChannelFactory, IChannelParameterDescriptionProvider
     {
         static ObjectCachePool<GameObject> _pool;
+
+        public virtual IEnumerable<ChannelParameterDescription> ParameterDescriptions
+        {
+            get
+            {
+                return Enumerable.Empty<ChannelParameterDescription>();
+            }
+        }
 
         private Dictionary<string, GameObject> _liveInstances = new Dictionary<string, GameObject>();
 
@@ -196,14 +204,14 @@ namespace Sonosthesia
 
     //----------------------------------- Representation Modifiers ----------------------------------------
 
-    public interface IChannelModifier : IChannelParameterDescriptionProvider
+    public interface IChannelModifier
     {
         void Initialise(GameObject representation);
 
         void ApplyParameter(GameObject representation, string key, IList<float> parameter);
     }
     
-    abstract public class BaseChannelModifier : MonoBehaviour, IChannelModifier
+    abstract public class BaseChannelModifier : MonoBehaviour, IChannelModifier, IChannelParameterDescriptionProvider
     {
         abstract public void Initialise(GameObject representation);
 
@@ -216,6 +224,7 @@ namespace Sonosthesia
                 return Enumerable.Empty<ChannelParameterDescription>();
             }
         }
+
     }
     
     

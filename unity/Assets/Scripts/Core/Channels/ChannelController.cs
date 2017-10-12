@@ -215,6 +215,40 @@ namespace Sonosthesia
             minValue = _minValue;
             dimensions = _dimensions;
         }
+
+        public ChannelParameterDescription Condense(ChannelParameterDescription other)
+        {
+            if (key != other.key)
+            {
+                throw new ArgumentException("mismatched keys");
+            }
+
+            return new ChannelParameterDescription(
+                key,
+                MathUils.Average(defaultValue, other.defaultValue),
+                Mathf.Max(maxValue, other.maxValue),
+                Mathf.Min(minValue, other.minValue),
+                Mathf.Max(dimensions, other.dimensions) );
+        }
+
+        public static IEnumerable<ChannelParameterDescription> CondenseDescriptions(IEnumerable<ChannelParameterDescription> descriptions)
+        {
+            Dictionary<string, ChannelParameterDescription> condensed = new Dictionary<string, ChannelParameterDescription>();
+
+            foreach(ChannelParameterDescription description in descriptions)
+            {
+                if (condensed.ContainsKey(description.key))
+                {
+                    condensed[description.key] = condensed[description.key].Condense(description);
+                }
+                else
+                {
+                    condensed[description.key] = description;
+                }
+            }
+
+            return condensed.Values;
+        }
     }
 
     public interface IChannelParameterDescriptionProvider

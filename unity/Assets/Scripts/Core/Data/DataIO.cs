@@ -2,6 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+#endif
 
 namespace Sonosthesia
 {
@@ -190,6 +195,8 @@ namespace Sonosthesia
     {
         public List<DataIOAdapter> adapters;
 
+        public IEnumerable<ComponentController> ComponentControllers { get { return _componentControllers.Values; } }
+
         private Dictionary<string, ComponentController> _componentControllers = new Dictionary<string, ComponentController>();
 
         protected override void OnEnable()
@@ -278,6 +285,31 @@ namespace Sonosthesia
             EmitIncomingComponentMessage(componentMessage);
         }
     }
+
+#if UNITY_EDITOR
+
+    [CustomEditor(typeof(DataIO))]
+    public class TaskCoordinatorEditor : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            // Show default inspector property editor
+            DrawDefaultInspector();
+
+            DataIO dataIO = (DataIO)target;
+
+            if (GUILayout.Button("Declare Components"))
+            {
+                foreach(DataIOAdapter adapter in dataIO.adapters)
+                {
+                    adapter.DeclareComponents(dataIO.ComponentControllers);
+                }
+            }
+
+        }
+    }
+
+#endif
 
 }
 
