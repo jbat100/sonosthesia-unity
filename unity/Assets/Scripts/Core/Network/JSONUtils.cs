@@ -101,7 +101,7 @@ namespace Sonosthesia
         public static JSONObject EncodeList<T>(List<T> objs) where T : JSONEncodable
         {
             JSONObject json = new JSONObject(JSONObject.Type.ARRAY);
-            json.list = (List<JSONObject>)objs.Select(obj => { return obj.ToJSON(); });
+            json.list = (List<JSONObject>)objs.Select(obj => { return obj.ToJSON(); }).ToList();
             return json;
         }
 

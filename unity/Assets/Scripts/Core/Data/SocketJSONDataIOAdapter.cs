@@ -7,6 +7,7 @@ namespace Sonosthesia
 {
     public class SocketJSONDataIOAdapter : DataIOAdapter
     {
+
         [SerializeField]
         private SocketJSONMessenger _messenger;
 
@@ -104,14 +105,7 @@ namespace Sonosthesia
 
         private void SendJSON(JSONObject json)
         {
-            if (_messenger.Status == SocketStatus.CONNECTED)
-            {
-                _messenger.SendMessage(json);
-            }
-            else
-            {
-                Debug.LogWarning("Cannot send message, socket is not connected");
-            }
+            _messenger.SendMessage(json);
         }
 
         private void ProcessJSON(JSONObject json)

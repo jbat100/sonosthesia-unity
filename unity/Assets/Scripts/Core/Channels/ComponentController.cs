@@ -12,7 +12,7 @@ namespace Sonosthesia
 
         public DataIO dataIO;
 
-        private Dictionary<string, ChannelController> _channelControllers;
+        private Dictionary<string, ChannelController> _channelControllers = new Dictionary<string, ChannelController>();
 
         public IEnumerable<ChannelController> ChannelControllers
         {
@@ -20,6 +20,16 @@ namespace Sonosthesia
             {
                 return _channelControllers.Values;
             }
+        }
+
+        private void OnEnable()
+        {
+            dataIO.RegisterComponentController(this);
+        }
+
+        private void OnDisable()
+        {
+            dataIO.UnregisterComponentController(this);
         }
 
         public void SendOutgoingChannelMessage(ChannelMessage message)

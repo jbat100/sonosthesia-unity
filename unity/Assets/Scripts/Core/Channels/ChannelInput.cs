@@ -15,13 +15,26 @@ namespace Sonosthesia
     public class ChannelInput : ChannelEndpoint, IChannelParameterDescriptionProvider
     {
 
-        public BaseChannelFactory Factory;
-        public List<GameObject> StaticRepresentations;
-        public List<BaseChannelModifier> Modifiers;
+        public BaseChannelFactory factory;
+        public List<GameObject> staticRepresentations;
+        public List<BaseChannelModifier> modifiers;
+        
+        public override IEnumerable<ChannelParameterDescription> ParameterDescriptions
+        {
+            get
+            {
+                List<ChannelParameterDescription> descriptions = new List<ChannelParameterDescription>();
+                if (factory) descriptions.AddRange(factory.ParameterDescriptions);
+                foreach(BaseChannelModifier modifier in modifiers)
+                {
+                    if (modifier) descriptions.AddRange(modifier.ParameterDescriptions);
+                }
+                return ChannelParameterDescription.CondenseDescriptions(descriptions);
+            }
+        }
 
         // cache the modifiers based on which key they support to save on performance
         private Dictionary<string, HashSet<BaseChannelModifier>> _modifiersByKey;
-
 
         private void BuildModifiersByKey()
         {
@@ -34,7 +47,7 @@ namespace Sonosthesia
                 _modifiersByKey.Clear();
             }
 
-            foreach (BaseChannelModifier modifier in Modifiers)
+            foreach (BaseChannelModifier modifier in modifiers)
             {
                 foreach (ChannelParameterDescription description in modifier.ParameterDescriptions)
                 {
@@ -56,16 +69,20 @@ namespace Sonosthesia
             set.Add(modifier);
         }
 
-        protected virtual void OnEnable()
+        protected override void OnEnable()
         {
+            base.OnEnable();
+
             controller.ControlInstanceEvent += OnControlInstanceEvent;
             controller.CreateInstanceEvent += OnCreateInstanceEvent;
             controller.DestroyInstanceEvent += OnDestroyInstanceEvent;
             controller.StaticControlEvent += OnStaticControlEvent;
         }
 
-        protected virtual void OnDisable()
+        protected override void OnDisable()
         {
+            base.OnDisable();
+
             controller.ControlInstanceEvent -= OnControlInstanceEvent;
             controller.CreateInstanceEvent -= OnCreateInstanceEvent;
             controller.DestroyInstanceEvent -= OnDestroyInstanceEvent;
@@ -74,7 +91,7 @@ namespace Sonosthesia
 
         protected virtual void OnStaticControlEvent(object sender, ChannelControllerStaticEventArgs e)
         {
-            foreach (GameObject representation in StaticRepresentations)
+            foreach (GameObject representation in staticRepresentations)
             {
                 ApplyParameterSet(representation, e.parameters);
             }
@@ -82,23 +99,23 @@ namespace Sonosthesia
 
         protected virtual void OnDestroyInstanceEvent(object sender, ChannelControllerDynamicEventArgs e)
         {
-            GameObject representation = Factory.GetInstanceRepresentation(e.instance);
+            GameObject representation = factory.GetInstanceRepresentation(e.instance);
 
             ApplyParameterSet(representation, e.instance.parameters);
 
-            Factory.DestroyInstanceRepresentation(e.instance);
+            factory.DestroyInstanceRepresentation(e.instance);
         }
 
         protected virtual void OnCreateInstanceEvent(object sender, ChannelControllerDynamicEventArgs e)
         {
-            GameObject representation = Factory.CreateInstanceRepresentation(e.instance);
+            GameObject representation = factory.CreateInstanceRepresentation(e.instance);
 
             ApplyParameterSet(representation, e.instance.parameters);
         }
 
         protected virtual void OnControlInstanceEvent(object sender, ChannelControllerDynamicEventArgs e)
         {
-            GameObject representation = Factory.GetInstanceRepresentation(e.instance);
+            GameObject representation = factory.GetInstanceRepresentation(e.instance);
 
             ApplyParameterSet(representation, e.instance.parameters);
         }

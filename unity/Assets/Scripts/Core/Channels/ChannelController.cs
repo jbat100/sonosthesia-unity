@@ -42,7 +42,16 @@ namespace Sonosthesia
                 // combine the parameter descriptions of all the endpoints
                 // https://stackoverflow.com/questions/27056967/concatenate-multiple-ienumerablet
 
-                return _endpoints.Select(endpoint => endpoint.ParameterDescriptions).SelectMany(description => description);
+                //return _endpoints.Select(endpoint => endpoint.ParameterDescriptions).SelectMany(description => description);
+
+                List<ChannelParameterDescription> descriptions = new List<ChannelParameterDescription>();
+
+                foreach(ChannelEndpoint endpoint in _endpoints)
+                {
+                    descriptions.AddRange(endpoint.ParameterDescriptions);
+                }
+
+                return descriptions;
             }
         }
 
@@ -91,6 +100,11 @@ namespace Sonosthesia
             {
                 _endpoints.Add(endpoint);
             }
+        }
+
+        public void UnregisterEndpoint(ChannelEndpoint endpoint)
+        {
+            _endpoints.Remove(endpoint);
         }
 
         public void PushIncomingChannelMessage(ChannelMessage message)
@@ -304,7 +318,10 @@ namespace Sonosthesia
         protected virtual void Awake()
         {
             controller = controller ?? GetComponentInParent<ChannelController>();
-            
+        }
+
+        protected virtual void OnEnable()
+        {
             if (controller)
             {
                 controller.RegisterEndpoint(this);
@@ -313,7 +330,18 @@ namespace Sonosthesia
             {
                 Debug.LogError("endpoint could not find controller");
             }
+        }
 
+        protected virtual void OnDisable()
+        {
+            if (controller)
+            {
+                controller.UnregisterEndpoint(this);
+            }
+            else
+            {
+                Debug.LogError("endpoint could not find controller");
+            }
         }
     }
 

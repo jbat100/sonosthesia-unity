@@ -14,6 +14,127 @@ namespace Sonosthesia
 
     public delegate void DataIOComponentMessageEventHandler(object sender, ComponentMessage componentMessage);
 
+    
+    public class DataIO : DataIOBase
+    {
+        public List<DataIOAdapter> adapters;
+
+        public IEnumerable<ComponentController> ComponentControllers { get { return _componentControllers.Values; } }
+
+        private Dictionary<string, ComponentController> _componentControllers = new Dictionary<string, ComponentController>();
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            foreach (DataIOAdapter adapter in adapters)
+            {
+                adapter.IncomingChannelMessageEvent += OnIncomingChannelMessageEvent;
+                adapter.IncomingComponentMessageEvent += OnIncomingComponentMessageEvent;
+                adapter.StatusEvent += OnAdapterStatusEvent;
+            }
+        }
+
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            foreach (DataIOAdapter adapter in adapters)
+            {
+                adapter.IncomingChannelMessageEvent -= OnIncomingChannelMessageEvent;
+                adapter.IncomingComponentMessageEvent -= OnIncomingComponentMessageEvent;
+                adapter.StatusEvent -= OnAdapterStatusEvent;
+            }
+        }
+
+        private void OnAdapterStatusEvent(object sender, DataIOStatueEnventArgs args)
+        {
+            if (args.status == DataIOStatus.CONNECTED)
+            {
+                DataIOAdapter adapter = sender as DataIOAdapter;
+                if (adapter)
+                {
+                    adapter.DeclareComponents(_componentControllers.Values);
+                }
+            }
+        }
+
+
+        public override void SendOutgoingChannelMessage(ChannelMessage message)
+        {
+            foreach (DataIOAdapter adapter in adapters)
+            {
+                adapter.SendOutgoingChannelMessage(message);
+            }
+        }
+
+        public override void SendOutgoingComponentMessage(ComponentMessage message)
+        {
+            foreach (DataIOAdapter adapter in adapters)
+            {
+                adapter.SendOutgoingComponentMessage(message);
+            }
+        }
+
+        public void RegisterComponentController(ComponentController controller)
+        {
+            if (controller != null && controller.identifier != null)
+            {
+                _componentControllers[controller.identifier] = controller;
+            }
+        }
+
+        public void UnregisterComponentController(ComponentController controller)
+        {
+            if (controller != null && controller.identifier != null)
+            {
+                _componentControllers.Remove(controller.identifier);
+            }
+        }
+
+        private void OnIncomingChannelMessageEvent(object sender, ChannelMessage channelMessage)
+        {
+            EmitIncomingChannelMessage(channelMessage);
+
+            ComponentController controller = null;
+            if (_componentControllers.TryGetValue(channelMessage.key.component, out controller))
+            {
+                controller.PushIncomingChannelMessage(channelMessage);
+            }
+        }
+
+        private void OnIncomingComponentMessageEvent(object sender, ComponentMessage componentMessage)
+        {
+            EmitIncomingComponentMessage(componentMessage);
+        }
+    }
+
+#if UNITY_EDITOR
+
+    [CustomEditor(typeof(DataIO))]
+    public class DataIOEditor : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            // Show default inspector property editor
+            DrawDefaultInspector();
+
+            DataIO dataIO = (DataIO)target;
+
+            if (GUILayout.Button("Declare Components"))
+            {
+                foreach (DataIOAdapter adapter in dataIO.adapters)
+                {
+                    adapter.DeclareComponents(dataIO.ComponentControllers);
+                }
+            }
+
+        }
+    }
+
+#endif
+
 
     public enum DataIOStatus
     {
@@ -158,8 +279,6 @@ namespace Sonosthesia
             EmitIncomingChannelMessages(_channelMessageBuffer.DequeueMessages());
         }
 
-        
-
         protected ChannelMessage FetchPooledChannelMessage()
         {
             return _channelMessagePool.Fetch();
@@ -191,125 +310,6 @@ namespace Sonosthesia
 
     }
 
-    public class DataIO : DataIOBase
-    {
-        public List<DataIOAdapter> adapters;
-
-        public IEnumerable<ComponentController> ComponentControllers { get { return _componentControllers.Values; } }
-
-        private Dictionary<string, ComponentController> _componentControllers = new Dictionary<string, ComponentController>();
-
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-
-            foreach(DataIOAdapter adapter in adapters)
-            {
-                adapter.IncomingChannelMessageEvent += OnIncomingChannelMessageEvent;
-                adapter.IncomingComponentMessageEvent += OnIncomingComponentMessageEvent;
-                adapter.StatusEvent += OnAdapterStatusEvent;
-            }
-        }
-
-
-        protected override void OnDisable()
-        {
-            base.OnDisable();
-
-            foreach (DataIOAdapter adapter in adapters)
-            {
-                adapter.IncomingChannelMessageEvent -= OnIncomingChannelMessageEvent;
-                adapter.IncomingComponentMessageEvent -= OnIncomingComponentMessageEvent;
-                adapter.StatusEvent -= OnAdapterStatusEvent;
-            }
-        }
-
-        private void OnAdapterStatusEvent(object sender, DataIOStatueEnventArgs args)
-        {
-            if (args.status == DataIOStatus.CONNECTED)
-            {
-                DataIOAdapter adapter = sender as DataIOAdapter;
-                if (adapter)
-                {
-                    adapter.DeclareComponents(_componentControllers.Values);
-                } 
-            }
-        }
-
-
-        public override void SendOutgoingChannelMessage(ChannelMessage message)
-        {
-            foreach(DataIOAdapter adapter in adapters)
-            {
-                adapter.SendOutgoingChannelMessage(message);
-            }
-        }
-
-        public override void SendOutgoingComponentMessage(ComponentMessage message)
-        {
-            foreach (DataIOAdapter adapter in adapters)
-            {
-                adapter.SendOutgoingComponentMessage(message);
-            }
-        }
-
-        public void RegisterComponentController(ComponentController controller)
-        {
-            if (controller != null && controller.identifier != null)
-            {
-                _componentControllers[controller.identifier] = controller;
-            }
-        }
-
-        public void UnregisterComponentController(ComponentController controller)
-        {
-            if (controller != null && controller.identifier != null)
-            {
-                _componentControllers.Remove(controller.identifier);
-            }
-        }
-
-        private void OnIncomingChannelMessageEvent(object sender, ChannelMessage channelMessage)
-        {
-            EmitIncomingChannelMessage(channelMessage);
-
-            ComponentController controller = null;
-            if (_componentControllers.TryGetValue(channelMessage.key.component, out controller))
-            {
-                controller.PushIncomingChannelMessage(channelMessage);
-            }
-        }
-
-        private void OnIncomingComponentMessageEvent(object sender, ComponentMessage componentMessage)
-        {
-            EmitIncomingComponentMessage(componentMessage);
-        }
-    }
-
-#if UNITY_EDITOR
-
-    [CustomEditor(typeof(DataIO))]
-    public class TaskCoordinatorEditor : Editor
-    {
-        public override void OnInspectorGUI()
-        {
-            // Show default inspector property editor
-            DrawDefaultInspector();
-
-            DataIO dataIO = (DataIO)target;
-
-            if (GUILayout.Button("Declare Components"))
-            {
-                foreach(DataIOAdapter adapter in dataIO.adapters)
-                {
-                    adapter.DeclareComponents(dataIO.ComponentControllers);
-                }
-            }
-
-        }
-    }
-
-#endif
 
 }
 

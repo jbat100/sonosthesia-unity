@@ -124,6 +124,7 @@ namespace Sonosthesia
         public ChannelInfo(string _identifier, IEnumerable<ParameterInfo> _parameters) : base(_identifier)
         {
             parameters.AddRange(_parameters);
+            Debug.Log("ChannelInfo with " + parameters.Count + " parameters");
         }
 
         public override JSONObject ToJSON()
@@ -479,6 +480,7 @@ namespace Sonosthesia
 
         public ComponentMessage(IEnumerable<ComponentInfo> _components)
         {
+            type = MessageType.Component;
             components.AddRange(_components);
         }
 

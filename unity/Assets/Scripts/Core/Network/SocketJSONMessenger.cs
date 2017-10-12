@@ -1,11 +1,45 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
+using WebSocketSharp;
+using WebSocketSharp.Net;
 using UnityEngine;
-
 
 namespace Sonosthesia
 {
+
+    public class JSONSocketUtils
+    {
+
+        // taken from MessageEventArgs
+        private static string BinaryToString(byte[] data)
+        {
+            return Encoding.UTF8.GetString(data);
+        }
+
+        public static JSONObject MessageEventArgsToJSONObject(MessageEventArgs e)
+        {
+
+            JSONObject json = null;
+
+            //if (e.IsText)
+            if (e.Type == Opcode.Text)
+            {
+                //Debug.Log("JSONSocketUtils text ");
+                json = new JSONObject(e.Data);
+            }
+            //else if (e.IsBinary)
+            else if (e.Type == Opcode.Binary)
+            {
+                string text = BinaryToString(e.RawData);
+                //Debug.Log("JSONSocketUtils converted binary to text ");
+                json = new JSONObject(text);
+            }
+
+            return json;
+        }
+    }
 
     public enum SocketStatus
     {
@@ -40,6 +74,7 @@ namespace Sonosthesia
         
         public bool push = false;
         public bool autoConnect = true;
+        public bool logJSON = false;
 
         public event JSONMessageEventHandler JSONMessageEvent;
 
@@ -89,9 +124,26 @@ namespace Sonosthesia
 
         abstract public void Close();
 
+        abstract public void SendString(string str);
+
         public virtual void SendMessage(JSONObject json)
         {
-            // subclasses should implement this
+            string str = json.Print();
+
+            if (logJSON)
+            {
+                Debug.Log(GetType().Name + " sending JSON : " + str);
+            }
+
+            if (Status == SocketStatus.CONNECTED)
+            {
+                SendString(str);
+            }
+            else
+            {
+                Debug.LogWarning("Cannot send message, socket is not connected");
+            }
+            
         }
 
         public List<JSONObject> DequeueMessages()

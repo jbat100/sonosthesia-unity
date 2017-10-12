@@ -17,6 +17,7 @@ namespace Sonosthesia
     {
         public string url = "ws://127.0.0.1:3000";
         public int reconnectDelay = 5;
+        public bool sendInBinary = false;
 
         public WebSocket socket { get { return ws; } }
         public bool IsConnected { get { return connected; } }
@@ -32,13 +33,34 @@ namespace Sonosthesia
         {
             base.Awake();
 
-            ws = new WebSocket(url);
-            ws.OnOpen += OnOpen;
-            ws.OnMessage += OnMessage;
-            ws.OnError += OnError;
-            ws.OnClose += OnClose;
+            // media can be overriden with media argument
+            string urlParam = CommonUtils.GetStartupParameter("-hub");
+            if (urlParam != null)
+            {
+                Debug.LogWarning("WSJSONMessenger ws address set to " + urlParam);
+                if (urlParam.StartsWith("ws://") == false)
+                {
+                    Debug.LogWarning("WSJSONMessenger will most likely fail, url should start with ws://");
+                }
+                url = urlParam;
+            }
+
+            try
+            {
+                ws = new WebSocket(url);
+                ws.OnOpen += OnOpen;
+                ws.OnMessage += OnMessage;
+                ws.OnError += OnError;
+                ws.OnClose += OnClose;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+
             wsConnected = false;
             connected = false;
+
         }
 
         // taken from MessageEventArgs
@@ -49,10 +71,13 @@ namespace Sonosthesia
 
         public override void Connect()
         {
-            Status = SocketStatus.CONNECTING;
-            connected = true;
-            socketThread = new Thread(RunSocketThread);
-            socketThread.Start(ws);
+            if (ws != null)
+            {
+                Status = SocketStatus.CONNECTING;
+                connected = true;
+                socketThread = new Thread(RunSocketThread);
+                socketThread.Start(ws);
+            }
         }
 
         public override void Close()
@@ -65,7 +90,7 @@ namespace Sonosthesia
 
         protected override void Update()
         {
-            if (wsConnected != ws.IsConnected)
+            if (ws != null && wsConnected != ws.IsConnected)
             {
                 wsConnected = ws.IsConnected;
                 if (wsConnected)
@@ -89,6 +114,22 @@ namespace Sonosthesia
         private void OnApplicationQuit()
         {
             Close();
+        }
+
+        public override void SendString(string str)
+        {
+            if (ws != null && ws.IsConnected)
+            {
+                if (sendInBinary)
+                {
+                    byte[] bytes = Encoding.UTF8.GetBytes(str);
+                    ws.SendAsync(bytes, completed => { });
+                }
+                else
+                {
+                    ws.SendAsync(str, completed => { });
+                }
+            }
         }
 
         private void RunSocketThread(object obj)
@@ -119,21 +160,8 @@ namespace Sonosthesia
         {
             //Debug.Log("WebsocketClientTest OnMessage " + e.Type);
 
-            JSONObject json = null;
-
-            if (e.Type == Opcode.Text)
-            {
-                //Debug.Log("WebsocketClientTest text " + e.Data);
-                json = new JSONObject(e.Data);
-            }
-            else if (e.Type == Opcode.Binary)
-            {
-                string text = ConvertToString(e.Type, e.RawData);
-                //Debug.Log("WebsocketClientTest converted binary to text " + text);
-                json = new JSONObject(text);
-            }
-
-
+            JSONObject json = JSONSocketUtils.MessageEventArgsToJSONObject(e);
+            
             InternalEnqueueMessage(json);
         }
 
