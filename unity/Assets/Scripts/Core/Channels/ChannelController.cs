@@ -296,6 +296,114 @@ namespace Sonosthesia
             return _parameters.Keys;
         }
 
+        public void ShallowClear()
+        {
+            foreach (IList<float> parameter in _parameters.Values)
+            {
+                parameter.Clear();
+            }
+        }
+
+        public void DeepClear()
+        {
+            _parameters.Clear();
+        }
+
+        public void SetMultiParameter(string key, IList<float> val)
+        {
+            IList<float> param = EnsureParameter(key);
+            param.Clear();
+            (param as List<float>).AddRange(val);
+        }
+
+        public void SetParameter(string key, float val)
+        {
+            IList<float> param = EnsureParameter(key);
+            if (param.Count == 1)
+            {
+                param[0] = val;
+            }
+            else
+            {
+                param.Clear();
+                param.Add(val); 
+            }
+        }
+
+        public void SetParameter(string key, Vector2 val)
+        {
+            IList<float> param = EnsureParameter(key);
+            if (param.Count == 2)
+            {
+                param[0] = val.x;
+                param[1] = val.y;
+            }
+            else
+            {
+                param.Clear();
+                param.Add(val.x);
+                param.Add(val.y);
+            }
+        }
+
+        public void SetParameter(string key, Vector3 val)
+        {
+            IList<float> param = EnsureParameter(key);
+            if (param.Count == 3)
+            {
+                param[0] = val.x;
+                param[1] = val.y;
+                param[2] = val.z;
+            }
+            else
+            {
+                param.Clear();
+                param.Add(val.x);
+                param.Add(val.y);
+                param.Add(val.z);
+            }
+        }
+
+        public void SetParameter(string key, Vector4 val)
+        {
+            IList<float> param = EnsureParameter(key);
+            if (param.Count == 4)
+            {
+                param[0] = val.x;
+                param[1] = val.y;
+                param[2] = val.z;
+                param[3] = val.w;
+            }
+            else
+            {
+                param.Clear();
+                param.Add(val.x);
+                param.Add(val.y);
+                param.Add(val.z);
+                param.Add(val.w);
+            }
+        }
+
+        public void SetParameter(string key, Color val)
+        {
+            IList<float> param = EnsureParameter(key);
+            if (param.Count == 4)
+            {
+                param[0] = val.r;
+                param[1] = val.g;
+                param[2] = val.b;
+                param[3] = val.a;
+            }
+            else
+            {
+                param.Clear();
+                param.Add(val.r);
+                param.Add(val.g);
+                param.Add(val.b);
+                param.Add(val.a);
+            }
+        }
+
         public IList<float> GetMultiParameter(string identifier) 
         {
             return _parameters.GetValueOrDefault(identifier, null);
@@ -308,6 +416,21 @@ namespace Sonosthesia
             // https://stackoverflow.com/questions/497261/how-do-i-get-the-first-element-from-an-ienumerablet-in-net
 
             return multi.FirstOrDefault();
+        }
+
+        protected IList<float> EnsureParameter(string key)
+        {
+            IList<float> list = null;
+            if (_parameters.ContainsKey(key))
+            {
+                list = _parameters[key];
+            }
+            else
+            {
+                list = new List<float>();
+                _parameters[key] = list;
+            }
+            return list;
         }
     }
 

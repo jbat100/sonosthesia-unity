@@ -11,12 +11,13 @@ namespace Sonosthesia
     public class ChannelOutput : ChannelEndpoint
     {
 
-        private ObjectPool<ChannelMessage> _messagePool = new ObjectPool<ChannelMessage>();
+        public ChannelParameterSet StaticParameterSet { get { return staticParameterSet; } }
+
+        private static ObjectPool<ChannelMessage> _messagePool = new ObjectPool<ChannelMessage>();
+        private static ObjectPool<ChannelInstance> _channelInstancePool = new ObjectPool<ChannelInstance>();
 
         private List<ChannelMessage> _liveMessages = new List<ChannelMessage>();
-
-        private Dictionary<string, ChannelParameterSet> _instanceParameterSets = new Dictionary<string, ChannelParameterSet>();
-
+        private Dictionary<string, ChannelInstance> _instances = new Dictionary<string, ChannelInstance>();
         private ChannelParameterSet staticParameterSet = new ChannelParameterSet();
 
         public static string CreateInstanceIdentifier()
@@ -34,35 +35,55 @@ namespace Sonosthesia
             _liveMessages.Clear();
         }
 
-        public ChannelParameterSet GetParameterSet(string identifier)
+        public ChannelInstance GetInstance(string identifier)
         {
-            if (_instanceParameterSets.ContainsKey(identifier))
+            if (_instances.ContainsKey(identifier))
             {
-                return _instanceParameterSets[identifier];
+                return _instances[identifier];
             }
             return null;
         }
 
-        public void CreateInstance(string identifier, ChannelParameterSet parameters)
+        // fetches an instance which is available for reuse or creates a new one
+        public ChannelInstance FetchChannelInstance()
         {
-            _instanceParameterSets[identifier] = parameters;
-            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Create, identifier, parameters));
+            ChannelInstance instance = _channelInstancePool.Fetch();
+            instance.identifier = CreateInstanceIdentifier();
+            instance.parameters.DeepClear();
+            return instance;
         }
 
-        public void DestroyInstance(string identifier)
+        // returns an instance for reuse
+        public void StoreChannelInstance(ChannelInstance instance)
         {
-            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Destroy, identifier, GetParameterSet(identifier)));
+            _channelInstancePool.Store(instance);
         }
 
-        public void ControlInstance(string identifier)
+        public void CreateInstance(ChannelInstance instance)
         {
-            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Control, identifier, GetParameterSet(identifier)));
-            _instanceParameterSets.Remove(identifier);
+            _instances[instance.identifier] = instance;
+            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Create, instance));
+        }
+
+        public void DestroyInstance(ChannelInstance instance)
+        {
+            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Destroy, instance));
+        }
+
+        public void ControlInstance(ChannelInstance instance)
+        {
+            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Control, instance));
+            _instances.Remove(instance.identifier);
         }
 
         public void StaticControl(ChannelParameterSet parameters)
         {
             controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Control, null, parameters));
+        }
+
+        private ChannelMessage MakeChannelMessage(MessageType messageType, ChannelInstance instance)
+        {
+            return MakeChannelMessage(messageType, instance.identifier, instance.parameters);
         }
 
         private ChannelMessage MakeChannelMessage(MessageType messageType, string identifier, ChannelParameterSet parameters)
