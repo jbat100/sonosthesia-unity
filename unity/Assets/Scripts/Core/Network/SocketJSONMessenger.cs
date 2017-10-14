@@ -108,19 +108,6 @@ namespace Sonosthesia
             _jsonQueue = new List<JSONObject>();
         }
 
-        public void OnEnable()
-        {
-            if (autoConnect) { Connect(); }
-        }
-
-        public void OnDisable()
-        {
-            Close();
-        }
-
-        abstract public void Connect();
-
-        abstract public void Close();
 
         abstract public void SendString(string str);
 

@@ -86,9 +86,9 @@ namespace Sonosthesia
 
     public class ParameterInfo : BaseInfo
     {
-        //public RangeInfo range = RangeInfo.defaultRange;
-        public float minValue = 0f;
-        public float maxValue = 1f;
+        public RangeInfo range = RangeInfo.defaultRange;
+        //public float minValue = 0f;
+        //public float maxValue = 1f;
         public float defaultValue = 0f;
         public int dimensions = 1;
 
@@ -97,19 +97,19 @@ namespace Sonosthesia
         public ParameterInfo(string _identifier, float _defaultValue, float _minValue, float _maxValue, int _dimensions = 1) : base(_identifier)
         {
             defaultValue = _defaultValue;
-            maxValue = _maxValue;
-            minValue = _minValue;
+            //maxValue = _maxValue;
+            //minValue = _minValue;
             dimensions = _dimensions;
-            //range = new RangeInfo(_minValue, _maxValue);
+            range = new RangeInfo(_minValue, _maxValue);
         }
 
         public override JSONObject ToJSON()
         {
             JSONObject json = base.ToJSON();
-            //json.AddField("range", range.ToJSON());
+            json.AddField("range", range.ToJSON());
             json.AddField("defaultValue", defaultValue);
-            json.AddField("minValue", minValue);
-            json.AddField("maxValue", maxValue);
+            //json.AddField("minValue", minValue);
+            //json.AddField("maxValue", maxValue);
             json.AddField("dimensions", dimensions);
             return json;
         }
@@ -117,10 +117,10 @@ namespace Sonosthesia
         public override void ApplyJSON(JSONObject json)
         {
             base.ApplyJSON(json);
-            //range.ApplyJSON(json.GetField("range"));
+            range.ApplyJSON(json.GetField("range"));
             defaultValue = JSONUtils.DecodeFloatField(json, "defaultValue");
-            minValue = JSONUtils.DecodeFloatField(json, "minValue");
-            maxValue = JSONUtils.DecodeFloatField(json, "maxValue");
+            //minValue = JSONUtils.DecodeFloatField(json, "minValue");
+            //maxValue = JSONUtils.DecodeFloatField(json, "maxValue");
             dimensions = JSONUtils.DecodeIntField(json, "dimensions");
         }
     }
@@ -196,14 +196,27 @@ namespace Sonosthesia
 
         public MessageType type;
 
-        public virtual JSONObject ToJSON()
+        public JSONObject ToJSON()
         {
-            return EncodeMessageType(type);
+            JSONObject json = EncodeMessageType(type);
+            json.AddField("content", ContentJSON());
+            return json;
         }
 
-        public virtual void ApplyJSON(JSONObject json)
+        public void ApplyJSON(JSONObject json)
         {
             type = DecodeMessageType(json);
+            ApplyJSONContent(json.GetField("content"));
+        }
+
+        public virtual JSONObject ContentJSON()
+        {
+            return new JSONObject();
+        }
+
+        public virtual void ApplyJSONContent(JSONObject json)
+        {
+
         }
     }
 
@@ -357,9 +370,9 @@ namespace Sonosthesia
 
         //------------------ JSON encode/decode ---------------------
 
-        public override JSONObject ToJSON()
+        public override JSONObject ContentJSON()
         {
-            JSONObject json = base.ToJSON();
+            JSONObject json = base.ContentJSON();
             json.AddField("component", key.component);
             json.AddField("channel", key.channel);
             if (key.instance != null) json.AddField("instance", key.instance);
@@ -367,20 +380,18 @@ namespace Sonosthesia
             return json;
         }
 
-        public override void ApplyJSON(JSONObject json)
+        public override void ApplyJSONContent(JSONObject json)
         {
-            base.ApplyJSON(json);
-
-            JSONObject content = json.GetField("content");
+            base.ApplyJSONContent(json);
 
             key = ChannelInstanceKey.Create(
-                JSONUtils.DecodeStringField(content, "component"),
-                JSONUtils.DecodeStringField(content, "channel"),
-                JSONUtils.DecodeStringField(content, "instance", false)
+                JSONUtils.DecodeStringField(json, "component"),
+                JSONUtils.DecodeStringField(json, "channel"),
+                JSONUtils.DecodeStringField(json, "instance", false)
                 );
 
             parameters.Clear();
-            parameters = JSONUtils.DecodeFloatsDictionary(content.GetField("parameters"), parameters);
+            parameters = JSONUtils.DecodeFloatsDictionary(json.GetField("parameters"), parameters);
         }
 
         //------------------ Agglomeration ---------------------
@@ -496,20 +507,18 @@ namespace Sonosthesia
 
         //------------------ JSON encode/decode ---------------------
 
-        public override JSONObject ToJSON()
+        public override JSONObject ContentJSON()
         {
-            JSONObject json = base.ToJSON();
+            JSONObject json = base.ContentJSON();
             json.AddField("components", JSONUtils.EncodeList(components));
             return json;
         }
 
-        public override void ApplyJSON(JSONObject json)
+        public override void ApplyJSONContent(JSONObject json)
         {
-            base.ApplyJSON(json);
+            base.ApplyJSONContent(json);
 
-            JSONObject content = json.GetField("content");
-
-            components = JSONUtils.DecodeList<ComponentInfo>(content.GetField("components"));
+            components = JSONUtils.DecodeList<ComponentInfo>(json.GetField("components"));
         }
 
         public override string ToString()
