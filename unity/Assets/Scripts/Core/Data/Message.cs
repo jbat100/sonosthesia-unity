@@ -86,7 +86,9 @@ namespace Sonosthesia
 
     public class ParameterInfo : BaseInfo
     {
-        public RangeInfo range = RangeInfo.defaultRange;
+        //public RangeInfo range = RangeInfo.defaultRange;
+        public float minValue = 0f;
+        public float maxValue = 1f;
         public float defaultValue = 0f;
         public int dimensions = 1;
 
@@ -95,23 +97,31 @@ namespace Sonosthesia
         public ParameterInfo(string _identifier, float _defaultValue, float _minValue, float _maxValue, int _dimensions = 1) : base(_identifier)
         {
             defaultValue = _defaultValue;
+            maxValue = _maxValue;
+            minValue = _minValue;
             dimensions = _dimensions;
-            range = new RangeInfo(_minValue, _maxValue);
+            //range = new RangeInfo(_minValue, _maxValue);
         }
 
         public override JSONObject ToJSON()
         {
             JSONObject json = base.ToJSON();
-            json.AddField("range", range.ToJSON());
+            //json.AddField("range", range.ToJSON());
             json.AddField("defaultValue", defaultValue);
+            json.AddField("minValue", minValue);
+            json.AddField("maxValue", maxValue);
+            json.AddField("dimensions", dimensions);
             return json;
         }
 
         public override void ApplyJSON(JSONObject json)
         {
             base.ApplyJSON(json);
-            range.ApplyJSON(json.GetField("range"));
+            //range.ApplyJSON(json.GetField("range"));
             defaultValue = JSONUtils.DecodeFloatField(json, "defaultValue");
+            minValue = JSONUtils.DecodeFloatField(json, "minValue");
+            maxValue = JSONUtils.DecodeFloatField(json, "maxValue");
+            dimensions = JSONUtils.DecodeIntField(json, "dimensions");
         }
     }
 

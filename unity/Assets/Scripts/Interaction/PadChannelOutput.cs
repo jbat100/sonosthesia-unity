@@ -63,7 +63,8 @@ namespace Sonosthesia
                 // or calculate based on position
                 else if (_t1 != null && _t1.Value.position != null && _t2 != null && _t2.Value.position != null)
                 {
-                    return (_t1.Value.position.Value - _t2.Value.position.Value) / (_t1.Value.time - _t2.Value.time);
+                    float deltaTime = (_t1.Value.time - _t2.Value.time);
+                    return (Mathf.Approximately(deltaTime, 0f)) ? Vector3.zero :(_t1.Value.position.Value - _t2.Value.position.Value) / deltaTime;
                 }
                 return Vector3.zero;
             }
@@ -86,9 +87,13 @@ namespace Sonosthesia
                 // else if we have position info, use that
                 else if (_t1 != null && _t1.Value.position != null && _t2 != null && _t2.Value.position != null && _t3 != null && _t3.Value.position != null)
                 {
-                    Vector3 vel1 = (_t1.Value.position.Value - _t2.Value.position.Value) / (_t1.Value.time - _t2.Value.time);
-                    Vector3 vel2 = (_t2.Value.position.Value - _t3.Value.position.Value) / (_t2.Value.time - _t3.Value.time);
-                    return (vel1 - vel2) / (_t1.Value.time - _t2.Value.time);
+                    float deltaTime1 = (_t1.Value.time - _t2.Value.time);
+                    if (Mathf.Approximately(deltaTime1, 0f)) return Vector3.zero;
+                    Vector3 vel1 = (_t1.Value.position.Value - _t2.Value.position.Value) / deltaTime1;
+                    float deltaTime2 = (_t2.Value.time - _t3.Value.time);
+                    if (Mathf.Approximately(deltaTime2, 0f)) return Vector3.zero;
+                    Vector3 vel2 = (_t2.Value.position.Value - _t3.Value.position.Value) / deltaTime2;
+                    return (vel1 - vel2) / deltaTime1;
                 }
                 return Vector3.zero;
             }
@@ -248,6 +253,8 @@ namespace Sonosthesia
 
         private void StartTouch(int touchId)
         {
+            //Debug.Log("StartTouch " + touchId);
+
             ChannelInstance instance = FetchChannelInstance();
             TouchHistory history = FetchTouchHistory();
 
@@ -263,6 +270,8 @@ namespace Sonosthesia
 
         private void UpdateTouch(int touchId)
         {
+            //Debug.Log("UpdateTouch " + touchId);
+
             ChannelInstance instance = _touchInstances[touchId];
             TouchHistory history = _touchHistories[touchId];
 
@@ -275,6 +284,8 @@ namespace Sonosthesia
 
         private void EndTouch(int touchId)
         {
+            //Debug.Log("EndTouch " + touchId);
+
             ChannelInstance instance = _touchInstances[touchId];
             TouchHistory history = _touchHistories[touchId];
 

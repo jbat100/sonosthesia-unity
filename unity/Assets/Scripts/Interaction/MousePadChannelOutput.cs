@@ -8,14 +8,14 @@ namespace Sonosthesia
 
     public class MousePadChannelOutput : PadChannelOutput
     {
-        bool useLeft = true;
-        bool useRight = true;
-        bool useMiddle = true;
+        public bool useLeft = true;
+        public bool useRight = true;
+        public bool useMiddle = true;
         
         protected override TouchInfo GetTouchInfo(int touchId)
         {
             TouchInfo info = new TouchInfo();
-            info.position = Input.mousePosition;
+            info.position = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1f);
             info.time = Time.unscaledTime;
             return info;
         }
@@ -24,8 +24,10 @@ namespace Sonosthesia
         {
             if (ScreenPointIsInPanel(Input.mousePosition))
             {
+                //Debug.Log("GetStartingTouches mouse in panel");
                 if (useLeft && Input.GetMouseButtonDown(0))
                 {
+                    //Debug.Log("GetStartingTouches starting left");
                     list.Add(0);
                 }
                 if (useRight && Input.GetMouseButtonDown(1))
@@ -41,15 +43,16 @@ namespace Sonosthesia
 
         protected override void GetEndingTouches(List<int> list)
         {
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonUp(0))
             {
+                //Debug.Log("GetStartingTouches end left");
                 list.Add(0);
             }
-            if (Input.GetMouseButtonDown(1))
+            if (Input.GetMouseButtonUp(1))
             {
                 list.Add(1);
             }
-            if (Input.GetMouseButtonDown(2))
+            if (Input.GetMouseButtonUp(2))
             {
                 list.Add(2);
             }

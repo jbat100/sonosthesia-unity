@@ -98,6 +98,12 @@ namespace Sonosthesia
             return f;
         }
 
+        public static int DecodeIntField(JSONObject obj, string key, bool required = true)
+        {
+            float decoded = DecodeFloatField(obj, key, required);
+            return Mathf.RoundToInt(decoded);
+        }
+
         public static JSONObject EncodeList<T>(List<T> objs) where T : JSONEncodable
         {
             JSONObject json = new JSONObject(JSONObject.Type.ARRAY);
@@ -125,7 +131,7 @@ namespace Sonosthesia
         public static JSONObject EncodeFloats(IEnumerable<float> numbers)
         {
             JSONObject json = new JSONObject(JSONObject.Type.ARRAY);
-            json.list = (List<JSONObject>)numbers.Select(number => { return JSONObject.Create(number); });
+            json.list = (List<JSONObject>)numbers.Select(number => { return JSONObject.Create(number); }).ToList();
             return json;
         }
 
