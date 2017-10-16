@@ -20,9 +20,9 @@ namespace Sonosthesia
             return null;
         } 
 
-        protected override TouchInfo GetTouchInfo(int touchId)
+        protected override ContactInfo GetContactInfo(int touchId)
         {
-            TouchInfo info = new TouchInfo();
+            ContactInfo info = new ContactInfo();
 
             Touch? touch = GetTouchWithId(touchId);
 
@@ -35,7 +35,7 @@ namespace Sonosthesia
             return info;
         }
 
-        protected override void GetStartingTouches(List<int> list)
+        protected override void GetStartingContacts(List<int> list)
         {
             for (int i = 0; i < Input.touchCount; ++i)
             {
@@ -47,7 +47,7 @@ namespace Sonosthesia
             }
         }
 
-        protected override void GetEndingTouches(List<int> list)
+        protected override void GetEndingContacts(List<int> list)
         {
             for (int i = 0; i < Input.touchCount; ++i)
             {

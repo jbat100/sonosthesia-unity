@@ -12,15 +12,15 @@ namespace Sonosthesia
         public bool useRight = true;
         public bool useMiddle = true;
         
-        protected override TouchInfo GetTouchInfo(int touchId)
+        protected override ContactInfo GetContactInfo(int touchId)
         {
-            TouchInfo info = new TouchInfo();
+            ContactInfo info = new ContactInfo();
             info.position = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1f);
             info.time = Time.unscaledTime;
             return info;
         }
 
-        protected override void GetStartingTouches(List<int> list)
+        protected override void GetStartingContacts(List<int> list)
         {
             if (ScreenPointIsInPanel(Input.mousePosition))
             {
@@ -41,7 +41,7 @@ namespace Sonosthesia
             }
         }
 
-        protected override void GetEndingTouches(List<int> list)
+        protected override void GetEndingContacts(List<int> list)
         {
             if (Input.GetMouseButtonUp(0))
             {
