@@ -14,6 +14,8 @@ namespace Sonosthesia
     {
         bool IsComplete { get; }
 
+        TContactInfo? Last { get; }
+
         void Push(TContactInfo? info);
 
         void Reset();
@@ -45,6 +47,8 @@ namespace Sonosthesia
     public class ContactHistory<TContactInfo> : IContactHistory<TContactInfo> where TContactInfo : struct, IContactTime, IContactMovement
     {
         public bool IsComplete { get { return _complete; } }
+
+        public TContactInfo? Last { get { return _t1; } }
 
         // fixed sized struct arrays are a real pain in the a*se so resorting to seperate variables... 
         private TContactInfo? _t1;
@@ -390,6 +394,19 @@ namespace Sonosthesia
             {
                 list.Add(2);
             }
+        }
+
+        public static Touch? GetTouchWithId(int touchId)
+        {
+            for (int i = 0; i < Input.touchCount; ++i)
+            {
+                Touch touch = Input.GetTouch(i);
+                if (touch.fingerId == touchId)
+                {
+                    return touch;
+                }
+            }
+            return null;
         }
     }
 }

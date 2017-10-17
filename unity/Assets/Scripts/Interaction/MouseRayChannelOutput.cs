@@ -12,7 +12,7 @@ namespace Sonosthesia
         public bool useRight = true;
         public bool useMiddle = true;
 
-        protected override Vector3 GetScreenPosition(int contactId)
+        protected override Vector3? GetScreenPosition(int contactId)
         {
             return Input.mousePosition;
         }
