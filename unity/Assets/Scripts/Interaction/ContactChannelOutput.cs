@@ -10,9 +10,11 @@ namespace Sonosthesia
     // TouchInfo and TouchHistory give a reusable way to allow implementations to provide their own velocity and acceleration
     // descriptions, or default to one based on previous values
 
-    public interface IContactHistory<TContactInfo>
+    public interface IContactHistory<TContactInfo> where TContactInfo : struct
     {
-        void Push(TContactInfo info);
+        bool IsComplete { get; }
+
+        void Push(TContactInfo? info);
 
         void Reset();
     }
@@ -39,18 +41,30 @@ namespace Sonosthesia
         public Vector3? acceleration { get; set; }
     }
 
+    // this is meant to be generally reusable but leaves the possibility of 
     public class ContactHistory<TContactInfo> : IContactHistory<TContactInfo> where TContactInfo : struct, IContactTime, IContactMovement
     {
+        public bool IsComplete { get { return _complete; } }
+
         // fixed sized struct arrays are a real pain in the a*se so resorting to seperate variables... 
         private TContactInfo? _t1;
         private TContactInfo? _t2;
         private TContactInfo? _t3;
 
-        public void Push(TContactInfo info)
+        private bool _complete = false;
+
+        public void Push(TContactInfo? info)
         {
-            _t3 = _t2;
-            _t2 = _t1;
-            _t1 = info;
+            if (info != null)
+            {
+                _t3 = _t2;
+                _t2 = _t1;
+                _t1 = info;
+            }
+            else
+            {
+                _complete = true;
+            }
         }
 
         public void Reset()
@@ -58,6 +72,7 @@ namespace Sonosthesia
             _t3 = null;
             _t2 = null;
             _t1 = null;
+            _complete = false;
         } 
 
         public Vector3 Position
@@ -123,9 +138,23 @@ namespace Sonosthesia
 
     public static class ContactChannelParameters
     {
-        public const string KEY_POSITION = "touch_position";
-        public const string KEY_VELOCITY = "touch_velocity";
-        public const string KEY_ACCELERATION = "touch_acceleration";
+        public const string KEY_POSITION        = "position";
+        public const string KEY_VELOCITY        = "velocity";
+        public const string KEY_ACCELERATION    = "acceleration";
+
+        public const string KEY_ACTOR_COLOR     = "actor_color";
+        public const string KEY_ACTOR_NORMAL    = "actor_normal";
+        public const string KEY_ACTOR_UV1       = "actor_uv1";
+        public const string KEY_ACTOR_UV2       = "actor_uv2";
+        public const string KEY_ACTOR_UV3       = "actor_uv3";
+        public const string KEY_ACTOR_UV4       = "actor_uv4";
+
+        public const string KEY_TARGET_COLOR    = "target_color";
+        public const string KEY_TARGET_NORMAL   = "target_normal";
+        public const string KEY_TARGET_UV1      = "target_uv1";
+        public const string KEY_TARGET_UV2      = "target_uv2";
+        public const string KEY_TARGET_UV3      = "target_uv3";
+        public const string KEY_TARGET_UV4      = "target_uv4";
     }
 
     abstract public class ContactChannelOutput<TContactInfo, TContactHistory> : ChannelOutput 
@@ -153,17 +182,28 @@ namespace Sonosthesia
         
 
         // used for various info gathering operations on each frame
-        private List<int> _idList = new List<int>();
+        private List<int> _contactIdList = new List<int>();
 
         private bool _currentInteractive = false;
         
-        abstract protected TContactInfo GetContactInfo(int index);
+        abstract protected TContactInfo? GetContactInfo(int index);
 
         abstract protected void GetStartingContacts(List<int> list);
 
         abstract protected void GetEndingContacts(List<int> list);
 
         abstract protected void ApplyContactHistoryToInstance(TContactHistory history, ChannelInstance instance);
+
+        protected virtual void GetCompletedContacts(List<int> list)
+        {
+            foreach(KeyValuePair<int, TContactHistory> kvp in _contactHistories)
+            {
+                if (kvp.Value.IsComplete)
+                {
+                    list.Add(kvp.Key);
+                }
+            }
+        }
 
         protected virtual void GetCurrentContacts(List<int> list)
         {
@@ -205,10 +245,10 @@ namespace Sonosthesia
 
         protected virtual void TeardownContacts()
         {
-            _idList.Clear();
-            GetCurrentContacts(_idList);
+            _contactIdList.Clear();
+            GetCurrentContacts(_contactIdList);
 
-            foreach (int index in _idList)
+            foreach (int index in _contactIdList)
             {
                 EndContact(index);
             }
@@ -226,28 +266,36 @@ namespace Sonosthesia
                     _currentInteractive = true;
                 }
 
-                _idList.Clear();
-                GetStartingContacts(_idList);
+                _contactIdList.Clear();
+                GetStartingContacts(_contactIdList);
                 
-                foreach(int touchId in _idList)
+                foreach(int contactId in _contactIdList)
                 {
-                    StartContact(touchId);
+                    StartContact(contactId);
                 }
 
-                _idList.Clear();
-                GetCurrentContacts(_idList);
+                _contactIdList.Clear();
+                GetCurrentContacts(_contactIdList);
 
-                foreach (int touchId in _idList)
+                foreach (int contactId in _contactIdList)
                 {
-                    UpdateContact(touchId);
+                    UpdateContact(contactId);
                 }
 
-                _idList.Clear();
-                GetEndingContacts(_idList);
+                _contactIdList.Clear();
+                GetEndingContacts(_contactIdList);
 
-                foreach (int touchId in _idList)
+                foreach (int contactId in _contactIdList)
                 {
-                    if (TouchIsOngoing(touchId)) EndContact(touchId);
+                    if (TouchIsOngoing(contactId)) EndContact(contactId);
+                }
+
+                _contactIdList.Clear();
+                GetCompletedContacts(_contactIdList);
+
+                foreach (int contactId in _contactIdList)
+                {
+                    EndContact(contactId);
                 }
             }
             else 
@@ -267,28 +315,22 @@ namespace Sonosthesia
 
             ChannelInstance instance = FetchChannelInstance();
             TContactHistory history = FetchTouchHistory();
-
             _contactHistories[contactId] = history;
             _contactInstances[contactId] = instance;
 
             history.Push(GetContactInfo(contactId));
-
             ApplyContactHistoryToInstance(history, instance);
-
             CreateInstance(instance);
         }
 
         private void UpdateContact(int contactId)
         {
             //Debug.Log("UpdateTouch " + touchId);
-
             ChannelInstance instance = _contactInstances[contactId];
             TContactHistory history = _contactHistories[contactId];
 
             history.Push(GetContactInfo(contactId));
-
             ApplyContactHistoryToInstance(history, instance);
-
             ControlInstance(instance);
         }
 
@@ -300,14 +342,11 @@ namespace Sonosthesia
             TContactHistory history = _contactHistories[contactId];
 
             history.Push(GetContactInfo(contactId));
-
             ApplyContactHistoryToInstance(history, instance);
-
             DestroyInstance(instance);
 
             _contactHistories.Remove(contactId);
             _contactInstances.Remove(contactId);
-
             StoreChannelInstance(instance);
             StoreTouchHistory(history);
         }
@@ -315,4 +354,42 @@ namespace Sonosthesia
 
     }
 
+
+    public static class InteractionHelpers
+    {
+        public static void GetMouseButtonDowns(List<int> list, bool useLeft, bool useRight, bool useMiddle)
+        {
+            //Debug.Log("GetStartingTouches mouse in panel");
+            if (useLeft && Input.GetMouseButtonDown(0))
+            {
+                //Debug.Log("GetStartingTouches starting left");
+                list.Add(0);
+            }
+            if (useRight && Input.GetMouseButtonDown(1))
+            {
+                list.Add(1);
+            }
+            if (useMiddle && Input.GetMouseButtonDown(2))
+            {
+                list.Add(2);
+            }
+        }
+
+        public static void GetMouseButtonUps(List<int> list, bool useLeft, bool useRight, bool useMiddle)
+        {
+            if (useLeft && Input.GetMouseButtonUp(0))
+            {
+                //Debug.Log("GetStartingTouches end left");
+                list.Add(0);
+            }
+            if (useRight && Input.GetMouseButtonUp(1))
+            {
+                list.Add(1);
+            }
+            if (useMiddle && Input.GetMouseButtonUp(2))
+            {
+                list.Add(2);
+            }
+        }
+    }
 }

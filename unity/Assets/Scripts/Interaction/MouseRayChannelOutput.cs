@@ -1,28 +1,27 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Sonosthesia
 {
-
-    public class MousePadChannelOutput : PadChannelOutput
+    
+    public class MouseRayChannelOutput : RayChannelOutput
     {
+
         public bool useLeft = true;
         public bool useRight = true;
         public bool useMiddle = true;
-        
-        protected override ContactInfo? GetContactInfo(int touchId)
+
+        protected override Vector3 GetScreenPosition(int contactId)
         {
-            ContactInfo info = new ContactInfo();
-            info.position = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1f);
-            info.time = Time.unscaledTime;
-            return info;
+            return Input.mousePosition;
         }
 
         protected override void GetStartingContacts(List<int> list)
         {
-            if (ScreenPointIsInPanel(Input.mousePosition))
+            RaycastHit? hit = Raycast(Input.mousePosition);
+
+            if (hit != null)
             {
                 InteractionHelpers.GetMouseButtonDowns(list, useLeft, useRight, useMiddle);
             }
@@ -32,10 +31,6 @@ namespace Sonosthesia
         {
             InteractionHelpers.GetMouseButtonUps(list, useLeft, useRight, useMiddle);
         }
-
-
     }
 
 }
-
-

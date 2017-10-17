@@ -6,8 +6,8 @@ namespace Sonosthesia
 {
     public class TouchPadChannelOutput : PadChannelOutput
     {
-        
-        private Touch? GetTouchWithId(int touchId)
+
+        protected virtual Touch? GetTouchWithId(int touchId)
         {
             for(int i = 0; i < Input.touchCount; ++i)
             {
@@ -20,19 +20,19 @@ namespace Sonosthesia
             return null;
         } 
 
-        protected override ContactInfo GetContactInfo(int touchId)
+        protected override ContactInfo? GetContactInfo(int touchId)
         {
-            ContactInfo info = new ContactInfo();
-
             Touch? touch = GetTouchWithId(touchId);
 
             if (touch != null)
             {
+                ContactInfo info = new ContactInfo();
                 info.position = new Vector3(touch.Value.position.x, touch.Value.position.y, touch.Value.pressure);
+                info.time = Time.unscaledTime;
+                return info;
             }
-            
-            info.time = Time.unscaledTime;
-            return info;
+
+            return null;
         }
 
         protected override void GetStartingContacts(List<int> list)
