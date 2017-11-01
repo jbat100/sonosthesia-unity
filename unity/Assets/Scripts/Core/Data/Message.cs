@@ -11,13 +11,13 @@ namespace Sonosthesia
 
     public enum MessageType
     {
-        Undefined,
-        Component,
-        Event,
-        Action,
-        Control,
-        Create,
-        Destroy
+        UNDEFINED,
+        COMPONENT,
+        EVENT,
+        ACTION,
+        CONTROL,
+        CREATE,
+        DESTROY
     }
 
     // ----------------------------- INFO CONTAINERS --------------------------------------
@@ -183,8 +183,7 @@ namespace Sonosthesia
     {
         public static MessageType DecodeMessageType(JSONObject json)
         {
-            //return (MessageType)Enum.Parse(typeof(MessageType), DecodeStringField(json, "type").ToUpper());
-            return (MessageType)Enum.Parse(typeof(MessageType), JSONUtils.FirstCharToUpper(JSONUtils.DecodeStringField(json, "type")));
+            return (MessageType)Enum.Parse(typeof(MessageType), JSONUtils.DecodeStringField(json, "type").ToUpper());
         }
 
         public static JSONObject EncodeMessageType(MessageType type, JSONObject json = null)
@@ -429,19 +428,19 @@ namespace Sonosthesia
         {
             switch (message.type)
             {
-                case MessageType.Create:
+                case MessageType.CREATE:
                     {
                         InternalRemoveMessage(_destroyMessages, message.key);
                         InternalRemoveMessage(_controlMessages, message.key);
                         InternalPushMessage(_createMessages, message);
                     }
                     break;
-                case MessageType.Control:
+                case MessageType.CONTROL:
                     {
                         InternalPushMessage(_controlMessages, message);
                     }
                     break;
-                case MessageType.Destroy:
+                case MessageType.DESTROY:
                     {
                         InternalRemoveMessage(_createMessages, message.key);
                         InternalRemoveMessage(_controlMessages, message.key);
@@ -501,7 +500,7 @@ namespace Sonosthesia
 
         public ComponentMessage(IEnumerable<ComponentInfo> _components)
         {
-            type = MessageType.Component;
+            type = MessageType.COMPONENT;
             components.AddRange(_components);
         }
 

@@ -62,23 +62,23 @@ namespace Sonosthesia
         public void CreateInstance(ChannelInstance instance)
         {
             _instances[instance.identifier] = instance;
-            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Create, instance));
+            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.CREATE, instance));
         }
 
         public void DestroyInstance(ChannelInstance instance)
         {
-            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Destroy, instance));
+            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.DESTROY, instance));
         }
 
         public void ControlInstance(ChannelInstance instance)
         {
-            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Control, instance));
+            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.CONTROL, instance));
             _instances.Remove(instance.identifier);
         }
 
         public void StaticControl(ChannelParameterSet parameters)
         {
-            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.Control, null, parameters));
+            controller.SendOutgoingChannelMessage(MakeChannelMessage(MessageType.CONTROL, null, parameters));
         }
 
         private ChannelMessage MakeChannelMessage(MessageType messageType, ChannelInstance instance)

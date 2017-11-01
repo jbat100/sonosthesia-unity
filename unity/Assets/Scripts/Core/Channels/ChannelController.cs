@@ -127,7 +127,7 @@ namespace Sonosthesia
             {
                 switch (message.type)
                 {
-                    case MessageType.Control:
+                    case MessageType.CONTROL:
                         {
                             ChannelInstance instance = EnsureChannelInstance(message.key.instance);
                             ExtractParameterSet(instance.parameters, message);
@@ -137,7 +137,7 @@ namespace Sonosthesia
                             }
                         }
                         break;
-                    case MessageType.Create:
+                    case MessageType.CREATE:
                         {
                             ChannelInstance instance = EnsureChannelInstance(message.key.instance);
                             ExtractParameterSet(instance.parameters, message);
@@ -147,7 +147,7 @@ namespace Sonosthesia
                             }
                         }
                         break;
-                    case MessageType.Destroy:
+                    case MessageType.DESTROY:
                         {
                             ChannelInstance instance = CleanChannelInstance(message.key.instance);
                             ExtractParameterSet(instance.parameters, message);
@@ -166,7 +166,7 @@ namespace Sonosthesia
             {
                 switch (message.type)
                 {
-                    case MessageType.Control:
+                    case MessageType.CONTROL:
                         {
                             ExtractParameterSet(staticParameters, message);
                             if (StaticControlEvent != null)

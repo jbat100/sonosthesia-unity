@@ -116,17 +116,17 @@ namespace Sonosthesia
 
             switch (messageType)
             {
-                case MessageType.Component:
+                case MessageType.COMPONENT:
                     {
                         ComponentMessage message = new ComponentMessage();
                         message.ApplyJSON(json);
                         EmitIncomingComponentMessage(message);
                     }
                     break;
-                case MessageType.Create:
-                case MessageType.Destroy:
-                case MessageType.Control:
-                case MessageType.Event:
+                case MessageType.CREATE:
+                case MessageType.DESTROY:
+                case MessageType.CONTROL:
+                case MessageType.EVENT:
                     {
                         ChannelMessage message = FetchPooledChannelMessage();
                         message.ApplyJSON(json);
